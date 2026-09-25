@@ -1,0 +1,278 @@
+# repokit — design
+
+Date: 2026-09-25 · Status: approved in conversation, awaiting written-spec review
+
+## 1. Purpose
+
+repokit applies one maintained engineering standard to a repository — commit conventions, git
+hooks, CI, releases, dependency updates, community health files and hosting settings — and keeps
+the repository on that standard over time.
+
+Audience, in order:
+
+1. The author's own repositories (about fifteen, across TypeScript/Node, Python, Dart/Flutter and
+   shell/PowerShell), which today each organise CI, hooks and releases differently.
+2. Anyone who installs it from npm: repokit is an open-source product.
+3. Later, a shared standard other teams can adopt and extend.
+
+### Success criteria for the first release
+
+- Applied to at least four real repositories covering four stacks, with their CI still green.
+- `repokit check` reports nothing immediately after `repokit init`.
+- `repokit check` reports drift when a managed file is edited, deleted or older than the current
+  standard.
+- `repokit update` upgrades unmodified files and never overwrites a file the user changed.
+
+### Decisions taken
+
+| Topic | Decision |
+| --- | --- |
+| Lifecycle | Long-lived sync: `init`, `check`, `update`, plus a per-repo config file |
+| Implementation | TypeScript CLI on npm, plus reusable GitHub Actions workflows hosted in this repo |
+| Package name | `@vannt-dev/repokit` (unscoped `repokit` is taken on npm); the command is `repokit` |
+| Stacks | Core is stack-agnostic; stack packs add language tooling. v1 ships node, python, dart, script |
+| Platforms | Platform adapter layer from the start. v1 ships GitHub; GitLab is phase 2 |
+| Hosting settings | Managed, but only through an explicit `repokit github apply` with a preview |
+| Workflow | GitHub Flow, Conventional Commits, SemVer, release-please |
+
+### Assumptions
+
+- Only GitHub is supported until the GitLab adapter lands.
+- repokit never silently overwrites content the user changed; conflicts are reported.
+
+### Out of scope for v1
+
+GitLab; monorepos with several independently released packages; a web UI or dashboard; opening
+pull requests across many repositories at once.
+
+## 2. Architecture
+
+```
+CLI (init · check · update · github apply)
+        │
+   Config ──▶ Planner ──▶ Sync engine ──▶ files in the repository
+ (.repokit.yml)  │           (hash / block / JSON key)
+                 ├── Core modules: editorconfig · commits · hooks · health · gitignore · deps · ci · release
+                 ├── Stack packs: node · python · dart · script
+                 └── Platform adapter: github (v1) · gitlab (phase 2)
+```
+
+Units and their contracts:
+
+- **Config** (`src/config/`): loads `.repokit.yml`, validates it against a JSON Schema shipped in
+  the package, and returns a typed `RepokitConfig`. Errors name the key and line.
+- **Stack pack** (`src/stacks/<id>.ts`): pure data describing a language — detection files, tool
+  commands, staged-file commands, runtime setup, release type, gitignore template and Dependabot
+  ecosystems. No platform-specific output.
+- **Module** (`src/modules/<id>.ts`): given the config, the selected stack packs and the platform
+  adapter, returns the desired outputs for its concern.
+- **Platform adapter** (`src/platforms/<id>.ts`): renders platform-specific outputs — CI files,
+  issue/PR templates, dependency-update config, release automation — and implements settings
+  read/apply for its hosting API.
+- **Planner** (`src/plan.ts`): a pure function from config to a list of desired outputs. It never
+  touches the filesystem, so it is tested directly.
+- **Sync engine** (`src/sync/`): compares desired outputs with the working tree and the lock file,
+  and produces a change set; a separate writer applies it.
+- **Lock file** (`.repokit/lock.json`): for every managed output, the path, strategy, template id,
+  standard version and SHA-256 of the content repokit last wrote.
+
+### Output strategies
+
+| Strategy | Used for | Ownership |
+| --- | --- | --- |
+| `file` | `lefthook.yml`, CI caller workflow, `commitlint.config.mjs`, templates | Whole file |
+| `block` | `.gitignore`, `CONTRIBUTING.md` additions, `.gitattributes` | Text between `repokit:start <id>` / `repokit:end <id>` markers, in the file's comment syntax |
+| `json` | `package.json` `scripts` entries, `devDependencies` of tools repokit configures | Named keys only |
+
+Block edits preserve the file's existing line endings and every byte outside the block.
+
+## 3. Configuration
+
+`.repokit.yml` at the repository root:
+
+```yaml
+schema: 1
+standard: 1.0.0          # standard version applied; written by init/update
+platform: github
+stacks: [node]           # one or more of: node, python, dart, script
+modules:
+  editorconfig: true
+  commits: true
+  hooks: true
+  ci: true
+  release: true
+  deps: true
+  gitignore: true
+  health:
+    license: MIT         # SPDX id, or false to leave licensing alone
+    codeowners: ["@vannt-dev"]
+owned: []                # paths the user manages; repokit neither writes nor checks them
+stack_options:
+  node: { versions: ["22", "24"] }
+  python: { versions: ["3.11", "3.12", "3.13"] }
+github:                  # used only by `repokit github apply`
+  default_branch: main
+  protect:
+    required_checks: [ci]
+    require_pull_request: true
+    allow_force_push: false
+  merge: { squash: true, merge_commit: true, rebase: false, delete_branch_on_merge: true }
+  security: { dependabot_alerts: true, dependabot_security_updates: true }
+  topics: []
+```
+
+Every module defaults to `true`; `init` writes the file with detected stacks and defaults.
+
+## 4. Core modules
+
+| Module | Outputs | Standard |
+| --- | --- | --- |
+| editorconfig | `.editorconfig`, block in `.gitattributes` | UTF-8, LF, final newline, trimmed whitespace; `*.ps1`, `*.bat`, `*.cmd` keep CRLF; `* text=auto eol=lf` |
+| commits | `commitlint.config.mjs` | Conventional Commits via `@commitlint/config-conventional`; header ≤ 100 characters |
+| hooks | `lefthook.yml` | `commit-msg`: commitlint. `pre-commit`: stack-pack staged commands on staged files only. `pre-push`: stack-pack test command. Installed with `lefthook install` |
+| health | `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), issue forms, PR template, `CODEOWNERS` | GitHub community health files |
+| gitignore | block in `.gitignore` | Stack templates from github/gitignore, pinned per standard version |
+| deps | `.github/dependabot.yml` | Weekly; minor and patch grouped per ecosystem; `github-actions` always included |
+| ci | caller workflow `.github/workflows/ci.yml` | Calls the reusable workflows in section 6 |
+| release | `release-please-config.json`, `.release-please-manifest.json`, `.github/workflows/release.yml` | SemVer; changelog from Conventional Commits; release type from the stack pack (`node`, `python`, `dart`, `simple`) |
+
+Tool installation: node repositories get `lefthook`, `@commitlint/cli` and
+`@commitlint/config-conventional` as `devDependencies` (`json` strategy). Other stacks run them
+through `npx --yes` pinned to the versions of the current standard, so Node.js 22 or newer is
+required on developer machines for every stack — the same requirement repokit itself has. CI never
+depends on local hooks: the reusable workflows run the same checks.
+
+Adoption rule: when `init` finds an existing file at a path a module wants to own, it does not
+overwrite it. The file is listed as unmanaged, and `repokit init --adopt <path>` (or `--adopt-all`)
+hands it to repokit, which then records its hash and treats later differences as drift.
+
+## 5. Stack packs (v1)
+
+```ts
+export default defineStack({
+  id: "python",
+  detect: ["pyproject.toml", "requirements.txt", "setup.cfg"],
+  tools: { format: "ruff format", lint: "ruff check", typecheck: "mypy .", test: "pytest" },
+  staged: { "*.py": ["ruff format {staged_files}", "ruff check --fix {staged_files}"] },
+  setup: { runtime: "python", versions: ["3.11", "3.12", "3.13"] },
+  release: "python",
+  gitignore: ["Python"],
+  dependabot: ["pip"],
+})
+```
+
+| Pack | Detect | Format / lint | Test | CI matrix |
+| --- | --- | --- | --- | --- |
+| node | `package.json` | Biome if configured, otherwise Prettier + ESLint | package manager `test` script; npm/pnpm/yarn from the lockfile | Node 22, 24 |
+| python | `pyproject.toml`, `requirements.txt` | Ruff format + check, mypy when configured | pytest | 3.11 – 3.13 |
+| dart | `pubspec.yaml` | `dart format`, `flutter analyze` or `dart analyze` | `flutter test` or `dart test` | Flutter stable |
+| script | `*.sh`, `*.ps1` at the root or in `scripts/`, no other stack | shfmt + ShellCheck, PSScriptAnalyzer, markdownlint | repo-declared command, if any | ubuntu-latest, windows-latest |
+
+A repository may list several packs; each contributes its commands, CI job and ecosystems.
+
+## 6. Reusable workflows
+
+Hosted in this repository under `.github/workflows/`:
+
+`stack-node.yml`, `stack-python.yml`, `stack-dart.yml`, `stack-script.yml`, `commitlint.yml`,
+`release.yml`.
+
+The caller workflow a repository receives:
+
+```yaml
+name: ci
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  node:
+    uses: vannt-dev/repokit/.github/workflows/stack-node.yml@v1
+    with:
+      node-versions: '["22","24"]'
+  commits:
+    uses: vannt-dev/repokit/.github/workflows/commitlint.yml@v1
+```
+
+- `@v1` is a moving major tag, advanced on every 1.x release; repositories may pin `@v1.x.y`.
+- Inputs cover versions, optional typecheck, a custom test command and a working directory.
+- Every third-party action inside the reusable workflows is pinned by commit SHA, and each job
+  declares the minimum `permissions`.
+- A repository may add its own jobs to `ci.yml`; `check` only verifies the jobs repokit manages.
+
+## 7. Commands and sync behaviour
+
+| Command | Behaviour |
+| --- | --- |
+| `repokit init [--stack …] [--adopt …] [--dry-run]` | Detect stacks, write `.repokit.yml`, plan, write outputs and the lock file |
+| `repokit check [--json]` | Plan and compare without writing; exit 1 on any drift |
+| `repokit update [--accept <path>] [--dry-run] [--force]` | Move to the standard bundled with the installed version and resync |
+| `repokit github apply [--yes] [--dry-run]` | Diff hosting settings against config; apply after confirmation |
+
+Update decision per output:
+
+| State | Action |
+| --- | --- |
+| Missing | Create |
+| Matches the lock hash (user did not edit) | Replace with the new content |
+| Differs from the lock hash (user edited) | Keep; write `<path>.repokit-new` and print a diff. `--accept <path>` takes the new content; adding the path to `owned` stops managing it |
+| Block present | Replace the block body only |
+| JSON key matches the lock value | Replace; otherwise treat as user-edited |
+| Module disabled | Delete outputs whose content still matches the lock hash; keep and report edited ones |
+
+`check` reports: missing outputs, user-edited outputs, outputs from an older standard version,
+invalid config and a missing or corrupt lock file. Writes refuse to touch files with uncommitted
+changes unless `--force` is given. After a write, repokit prints a summary and the suggested
+commit message `chore(repokit): update standard to <version>`.
+
+## 8. GitHub settings
+
+`repokit github apply` reads the `github:` section, fetches current settings through the REST API
+and prints a diff. It applies changes only with `--yes` or an interactive confirmation.
+
+Managed: a repository ruleset named `repokit` targeting the default branch (required pull request,
+required status checks, no force push) — rulesets rather than legacy branch protection, which
+repokit leaves untouched — allowed merge methods, delete-branch-on-merge, Dependabot alerts and
+security updates, description and topics.
+
+Never touched: repository deletion, visibility, secrets, collaborators.
+
+Authentication comes from `GITHUB_TOKEN` or `gh auth token`. A missing scope is reported by name.
+
+## 9. Error handling
+
+- Config errors name the key and line and exit 2.
+- Network or API failures leave the working tree untouched and exit 3.
+- A corrupt or missing lock file makes `check` exit 1 with a hint to run `repokit init --relock`,
+  which rebuilds the lock from the current files after confirmation.
+- Drift exits 1; success exits 0.
+
+## 10. Testing
+
+- **Unit (Vitest):** config validation, planner output per module and stack, every row of the
+  update decision table, block replacement in LF and CRLF files, JSON key merging.
+- **Snapshot:** full output for each stack pack rendered into a temporary directory.
+- **End-to-end:** temporary git repository — `init`, `check` clean, edit a managed file, `update`
+  keeps the edit, `check` reports it.
+- **Workflow tests:** this repository's CI runs each reusable workflow against fixture projects in
+  `fixtures/node`, `fixtures/python`, `fixtures/dart`, `fixtures/script`.
+- **Dogfooding:** repokit manages its own repository.
+
+## 11. Releasing repokit
+
+GitHub Flow with release-please. `@vannt-dev/repokit` is published from GitHub Actions with npm
+provenance. The `v1` tag is moved to each 1.x release.
+
+## 12. Delivery order
+
+1. Skeleton: CLI, config, planner, sync engine, lock file, `init`/`check`/`update` with `--dry-run`.
+2. Core modules (editorconfig, commits, hooks, health, gitignore, deps) and the node pack.
+3. Reusable workflows, `ci` and `release` modules; pilot on token-efficient-work and
+   convert-md-to-pdf.
+4. python, dart and script packs; pilot on governed-agent-sdlc, nimbleclip and
+   ai-engineering-skills.
+5. `repokit github apply`.
+6. Phase 2: GitLab adapter (GitLab CI components, Renovate, a GitLab-capable release tool,
+   protected branches and approvals); further stack packs (Go, Rust, Java/Kotlin, .NET, PHP, Ruby).
