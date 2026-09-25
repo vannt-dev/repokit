@@ -30,7 +30,7 @@ Audience, in order:
 | Lifecycle | Long-lived sync: `init`, `check`, `update`, plus a per-repo config file |
 | Implementation | TypeScript CLI on npm, plus reusable GitHub Actions workflows hosted in this repo |
 | Package name | `@vannt-dev/repokit` (unscoped `repokit` is taken on npm); the command is `repokit` |
-| Stacks | Core is stack-agnostic; stack packs add language tooling. v1 ships node, python, dart, script |
+| Stacks | Core is stack-agnostic; stack packs add language tooling. v1 ships node (including NestJS), python, dart, script, java (Maven/Gradle, Spring Boot) and dotnet (ASP.NET Core) |
 | Platforms | Platform adapter layer from the start. v1 ships GitHub; GitLab is phase 2 |
 | Hosting settings | Managed, but only through an explicit `repokit github apply` with a preview |
 | Workflow | GitHub Flow, Conventional Commits, SemVer, release-please |
@@ -94,7 +94,7 @@ Block edits preserve the file's existing line endings and every byte outside the
 schema: 1
 standard: 1.0.0          # standard version applied; written by init/update
 platform: github
-stacks: [node]           # one or more of: node, python, dart, script
+stacks: [node]           # one or more of: node, python, dart, script, java, dotnet
 modules:
   editorconfig: true
   commits: true
@@ -169,6 +169,8 @@ export default defineStack({
 | python | `pyproject.toml`, `requirements.txt` | Ruff format + check, mypy when configured | pytest | 3.11 – 3.13 |
 | dart | `pubspec.yaml` | `dart format`, `flutter analyze` or `dart analyze` | `flutter test` or `dart test` | Flutter stable |
 | script | `*.sh`, `*.ps1` at the root or in `scripts/`, no other stack | shfmt + ShellCheck, PSScriptAnalyzer, markdownlint | repo-declared command, if any | ubuntu-latest, windows-latest |
+| java | `pom.xml`, `build.gradle`, `build.gradle.kts` | Spotless (google-java-format) through the build | `mvn -B verify` or `./gradlew check` | Temurin 17, 21 |
+| dotnet | `*.sln`, `*.csproj` | `dotnet format --verify-no-changes` | `dotnet test` | .NET 8.0, 9.0 |
 
 A repository may list several packs; each contributes its commands, CI job and ecosystems.
 
@@ -273,8 +275,9 @@ provenance. The `v1` tag is moved to each 1.x release.
 2. Core modules (editorconfig, commits, hooks, health, gitignore, deps) and the node pack.
 3. Reusable workflows, `ci` and `release` modules; pilot on token-efficient-work and
    convert-md-to-pdf.
-4. python, dart and script packs; pilot on governed-agent-sdlc, nimbleclip and
-   ai-engineering-skills.
+4. python, dart, script, java and dotnet packs, plus NestJS awareness in the node pack (nest-cli.json;
+   `lint` and `test:e2e` scripts); pilot on governed-agent-sdlc, nimbleclip, ai-engineering-skills
+   and a Java and a .NET repository.
 5. `repokit github apply`.
 6. Phase 2: GitLab adapter (GitLab CI components, Renovate, a GitLab-capable release tool,
-   protected branches and approvals); further stack packs (Go, Rust, Java/Kotlin, .NET, PHP, Ruby).
+   protected branches and approvals); further stack packs (Go, Rust, Kotlin, PHP, Ruby).
