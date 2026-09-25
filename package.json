@@ -1,0 +1,22 @@
+{
+  "name": "@vannt-dev/repokit",
+  "version": "0.1.0",
+  "description": "Keep every repository on one maintained standard: commits, git hooks, CI, releases, dependency updates and repo settings.",
+  "type": "module",
+  "bin": { "repokit": "dist/cli.js" },
+  "files": ["dist/", "templates/"],
+  "engines": { "node": ">=22.12.0" },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": { "ajv": "^8.20.0", "yaml": "^2.9.1" },
+  "devDependencies": { "@types/node": "^22.20.4", "typescript": "^7.0.2", "vitest": "^5.0.2" },
+  "repository": { "type": "git", "url": "git+https://github.com/vannt-dev/repokit.git" },
+  "homepage": "https://github.com/vannt-dev/repokit#readme",
+  "bugs": { "url": "https://github.com/vannt-dev/repokit/issues" },
+  "keywords": ["repository", "standard", "conventional-commits", "lefthook", "github-actions", "dependabot"],
+  "author": "vannt-dev",
+  "license": "MIT"
+}
