@@ -81,7 +81,7 @@ Units and their contracts:
 | Strategy | Used for | Ownership |
 | --- | --- | --- |
 | `file` | `lefthook.yml`, CI caller workflow, `commitlint.config.mjs`, templates | Whole file |
-| `block` | `.gitignore`, `CONTRIBUTING.md` additions, `.gitattributes` | Text between `repokit:start <id>` / `repokit:end <id>` markers, in the file's comment syntax |
+| `block` | `.gitignore`, `.gitattributes` | Text between `repokit:start <id>` / `repokit:end <id>` markers, in the file's comment syntax |
 | `json` | `package.json` `scripts` entries, `devDependencies` of tools repokit configures | Named keys only |
 
 Block edits preserve the file's existing line endings and every byte outside the block.
@@ -104,7 +104,9 @@ modules:
   deps: true
   gitignore: true
   health:
-    license: MIT         # SPDX id, or false to leave licensing alone
+    license: MIT         # SPDX id, or false to leave licensing alone (v1 bundles MIT)
+    copyright: Van Nguyen   # LICENSE holder; init reads git config user.name
+    contact: https://github.com/vannt-dev   # Code of Conduct contact; init derives it from the origin remote
     codeowners: ["@vannt-dev"]
 owned: []                # paths the user manages; repokit neither writes nor checks them
 stack_options:
