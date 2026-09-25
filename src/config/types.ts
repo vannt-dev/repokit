@@ -1,0 +1,61 @@
+export const STACK_IDS = ["node", "python", "dart", "script", "java", "dotnet"] as const;
+export type StackId = (typeof STACK_IDS)[number];
+
+export interface HealthConfig {
+  /** SPDX id, or false to leave licensing alone. v1 bundles MIT only. */
+  license: string | false;
+  /** LICENSE holder line, e.g. "2026 Van Nguyen". */
+  copyright: string;
+  /** Code of Conduct contact: a URL or an e-mail address. */
+  contact: string;
+  codeowners: string[];
+}
+
+export interface ModulesConfig {
+  editorconfig: boolean;
+  commits: boolean;
+  hooks: boolean;
+  ci: boolean;
+  release: boolean;
+  deps: boolean;
+  gitignore: boolean;
+  health: HealthConfig | false;
+}
+
+export interface RepokitConfig {
+  schema: 1;
+  standard: string;
+  platform: "github";
+  stacks: StackId[];
+  modules: ModulesConfig;
+  owned: string[];
+  stack_options: Record<string, Record<string, unknown>>;
+  github?: Record<string, unknown>;
+}
+
+export function defaultConfig(input: {
+  stacks: StackId[];
+  standard: string;
+  copyright: string;
+  contact: string;
+  codeowners: string[];
+}): RepokitConfig {
+  return {
+    schema: 1,
+    standard: input.standard,
+    platform: "github",
+    stacks: input.stacks,
+    modules: {
+      editorconfig: true,
+      commits: true,
+      hooks: true,
+      ci: true,
+      release: true,
+      deps: true,
+      gitignore: true,
+      health: { license: "MIT", copyright: input.copyright, contact: input.contact, codeowners: input.codeowners },
+    },
+    owned: [],
+    stack_options: {},
+  };
+}
