@@ -53,7 +53,7 @@ CLI (init · check · update · github apply)
    Config ──▶ Planner ──▶ Sync engine ──▶ files in the repository
  (.repokit.yml)  │           (hash / block / JSON key)
                  ├── Core modules: editorconfig · commits · hooks · health · gitignore · deps · ci · release
-                 ├── Stack packs: node · python · dart · script
+                 ├── Stack packs: node · python · dart · script · java · dotnet
                  └── Platform adapter: github (v1) · gitlab (phase 2)
 ```
 
@@ -136,7 +136,7 @@ Every module defaults to `true`; `init` writes the file with detected stacks and
 | gitignore | block in `.gitignore` | Stack templates from github/gitignore, pinned per standard version |
 | deps | `.github/dependabot.yml` | Weekly; minor and patch grouped per ecosystem; `github-actions` always included |
 | ci | caller workflow `.github/workflows/ci.yml` | Calls the reusable workflows in section 6 |
-| release | `release-please-config.json`, `.release-please-manifest.json`, `.github/workflows/release.yml` | SemVer; changelog from Conventional Commits; release type from the stack pack (`node`, `python`, `dart`, `simple`) |
+| release | `release-please-config.json`, `.release-please-manifest.json`, `.github/workflows/release.yml` | SemVer; changelog from Conventional Commits; release type from the stack pack (`node`, `python`, `dart`, `maven`, `simple`) |
 
 Tool installation: node repositories get `lefthook`, `@commitlint/cli` and
 `@commitlint/config-conventional` as `devDependencies` (`json` strategy). Other stacks run them
@@ -174,11 +174,24 @@ export default defineStack({
 
 A repository may list several packs; each contributes its commands, CI job and ecosystems.
 
+| Pack | Release type | Gitignore templates | Dependabot ecosystems |
+| --- | --- | --- | --- |
+| node | `node` | `Node` | `npm` |
+| python | `python` | `Python` | `pip` |
+| dart | `dart` | `Dart` (plus `Flutter` entries when `flutter` is a dependency) | `pub` |
+| script | `simple` | none | none |
+| java | `maven` for Maven; `simple` with `gradle.properties` `version` as an extra file for Gradle | `Java`, plus `Maven` or `Gradle` | `maven` or `gradle` |
+| dotnet | `simple` with the `<Version>` element of `Directory.Build.props` (or the single `*.csproj`) as an extra file | `VisualStudio` | `nuget` |
+
+release-please has no .NET release type, so the dotnet pack uses `simple` and updates the version
+through the generic XML updater.
+
 ## 6. Reusable workflows
 
 Hosted in this repository under `.github/workflows/`:
 
-`stack-node.yml`, `stack-python.yml`, `stack-dart.yml`, `stack-script.yml`, `commitlint.yml`,
+`stack-node.yml`, `stack-python.yml`, `stack-dart.yml`, `stack-script.yml`, `stack-java.yml`,
+`stack-dotnet.yml`, `commitlint.yml`,
 `release.yml`.
 
 The caller workflow a repository receives:
@@ -261,7 +274,8 @@ Authentication comes from `GITHUB_TOKEN` or `gh auth token`. A missing scope is 
 - **End-to-end:** temporary git repository — `init`, `check` clean, edit a managed file, `update`
   keeps the edit, `check` reports it.
 - **Workflow tests:** this repository's CI runs each reusable workflow against fixture projects in
-  `fixtures/node`, `fixtures/python`, `fixtures/dart`, `fixtures/script`.
+  `fixtures/node`, `fixtures/python`, `fixtures/dart`, `fixtures/script`, `fixtures/java-maven`,
+  `fixtures/java-gradle`, `fixtures/dotnet`.
 - **Dogfooding:** repokit manages its own repository.
 
 ## 11. Releasing repokit
