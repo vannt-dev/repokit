@@ -5,6 +5,7 @@ import type { Output } from "../model.js";
 import { readBlock } from "./block.js";
 import { getAtPath } from "./json.js";
 import type { Target } from "./lock.js";
+import { readYamlKey } from "./yaml.js";
 
 /** The text repokeeper compares and hashes for an output. */
 export function desiredText(output: Output): string {
@@ -28,6 +29,7 @@ export async function readCurrent(root: string, target: Target): Promise<string 
   if (text === null) return null;
   if (target.kind === "file") return text;
   if (target.kind === "block") return readBlock(text, target.id, target.comment);
+  if (target.kind === "yaml") return readYamlKey(text, target.keyPath, target.path);
   let data: unknown;
   try {
     data = JSON.parse(text);

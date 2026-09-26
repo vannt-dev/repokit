@@ -3,8 +3,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { Io } from "../src/cli.js";
 import { defaultConfig, type ModulesConfig, type RepokeeperConfig } from "../src/config/types.js";
-import type { ModuleContext, RepoInfo, ResolvedStack } from "../src/model.js";
+import type { ModuleContext, Output, RepoInfo, ResolvedStack } from "../src/model.js";
 import { githubPlatform } from "../src/platforms/github.js";
+import { applySync } from "../src/sync/apply.js";
+import { readLock } from "../src/sync/lock.js";
+import { computeSync, type SyncResult } from "../src/sync/sync.js";
 
 export function capture(cwd: string = process.cwd()): { io: Io; out: string[]; err: string[] } {
   const out: string[] = [];
@@ -50,4 +53,12 @@ export function makeContext(
     platform: githubPlatform,
     repo: overrides.repo ?? { owner: "vannt-dev", name: "example" },
   };
+}
+
+/** Plans nothing: computes and applies one sync of `outputs`, as `update` would. */
+export async function syncOnce(root: string, outputs: Output[], standard = "1.1.0"): Promise<SyncResult> {
+  const lock = await readLock(root);
+  const result = await computeSync(root, outputs, lock, { adopt: new Set(), accept: new Set() });
+  await applySync(root, result, lock, standard);
+  return result;
 }

@@ -4,6 +4,9 @@ import type { CommentStyle } from "./sync/block.js";
 export const MANAGED_HEADER =
   "Managed by repokeeper (https://github.com/vannt-dev/repokeeper). Edits are reported by `repokeeper check`.";
 
+/** Header of YAML files repokeeper creates but owns only in part. */
+export const YAML_HEADER = `${MANAGED_HEADER} Keys and jobs you add yourself are left alone.`;
+
 export interface FileOutput {
   kind: "file";
   path: string;
@@ -25,11 +28,22 @@ export interface JsonOutput {
   value: unknown;
   module: string;
 }
-export type Output = FileOutput | BlockOutput | JsonOutput;
+/** Named keys of a YAML file, such as one job of a workflow. */
+export interface YamlOutput {
+  kind: "yaml";
+  path: string;
+  keyPath: string[];
+  value: unknown;
+  /** Preferred order of top-level keys, applied whenever repokeeper writes the file. */
+  order?: readonly string[];
+  module: string;
+}
+export type Output = FileOutput | BlockOutput | JsonOutput | YamlOutput;
 
 export function outputId(output: Output): string {
   if (output.kind === "file") return `file:${output.path}`;
   if (output.kind === "block") return `block:${output.path}#${output.id}`;
+  if (output.kind === "yaml") return `yaml:${output.path}#${JSON.stringify(output.keyPath)}`;
   return `json:${output.path}#${JSON.stringify(output.keyPath)}`;
 }
 
