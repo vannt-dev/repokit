@@ -11,7 +11,10 @@
       "!commitlint.config.mjs",
       "!package.json",
       "!package-lock.json",
-      "!fixtures"
+      "!fixtures",
+      "!release-please-config.json",
+      "!.release-please-manifest.json",
+      "!CHANGELOG.md"
     ]
   },
   "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 120 },
