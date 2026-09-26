@@ -25,7 +25,7 @@ async function put(path: string, text: string): Promise<void> {
 
 async function write(root: string, output: Output): Promise<void> {
   const path = join(root, output.path);
-  if (output.kind === "file") return put(path, output.content);
+  if (output.kind === "file" || output.kind === "seed") return put(path, output.content);
   const existing = await readOrNull(path);
   if (output.kind === "block") return put(path, upsertBlock(existing, output.id, output.body, output.comment));
   if (output.kind === "yaml") {
@@ -41,6 +41,7 @@ async function write(root: string, output: Output): Promise<void> {
 
 async function remove(root: string, target: Target): Promise<void> {
   const path = join(root, target.path);
+  if (target.kind === "seed") return;
   if (target.kind === "file") return rm(path, { force: true });
   const existing = await readOrNull(path);
   if (existing === null) return;

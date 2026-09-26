@@ -13,6 +13,13 @@ export interface FileOutput {
   content: string;
   module: string;
 }
+/** A file repokeeper creates once and then leaves to other tools, such as a release manifest. */
+export interface SeedOutput {
+  kind: "seed";
+  path: string;
+  content: string;
+  module: string;
+}
 export interface BlockOutput {
   kind: "block";
   path: string;
@@ -38,17 +45,18 @@ export interface YamlOutput {
   order?: readonly string[];
   module: string;
 }
-export type Output = FileOutput | BlockOutput | JsonOutput | YamlOutput;
+export type Output = FileOutput | SeedOutput | BlockOutput | JsonOutput | YamlOutput;
 
 export function outputId(output: Output): string {
   if (output.kind === "file") return `file:${output.path}`;
+  if (output.kind === "seed") return `seed:${output.path}`;
   if (output.kind === "block") return `block:${output.path}#${output.id}`;
   if (output.kind === "yaml") return `yaml:${output.path}#${JSON.stringify(output.keyPath)}`;
   return `json:${output.path}#${JSON.stringify(output.keyPath)}`;
 }
 
 export function describeOutput(output: Output): string {
-  if (output.kind === "file") return output.path;
+  if (output.kind === "file" || output.kind === "seed") return output.path;
   if (output.kind === "block") return `${output.path} (block ${output.id})`;
   return `${output.path} (${output.keyPath.join(".")})`;
 }

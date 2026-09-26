@@ -10,6 +10,8 @@ import { readYamlKey } from "./yaml.js";
 /** The text repokeeper compares and hashes for an output. */
 export function desiredText(output: Output): string {
   if (output.kind === "file") return output.content;
+  // a seed only has to exist, so present content always compares equal
+  if (output.kind === "seed") return "";
   if (output.kind === "block") return output.body;
   return JSON.stringify(output.value);
 }
@@ -28,6 +30,7 @@ export async function readCurrent(root: string, target: Target): Promise<string 
   const text = await readText(root, target.path);
   if (text === null) return null;
   if (target.kind === "file") return text;
+  if (target.kind === "seed") return "";
   if (target.kind === "block") return readBlock(text, target.id, target.comment);
   if (target.kind === "yaml") return readYamlKey(text, target.keyPath, target.path);
   let data: unknown;
