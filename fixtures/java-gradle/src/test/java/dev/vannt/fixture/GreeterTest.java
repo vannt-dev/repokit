@@ -1,9 +1,12 @@
 package dev.vannt.fixture;
 
-public final class Greeter {
-  private Greeter() {}
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-  public static String greet(String name) {
-    return "hello, " + name;
+import org.junit.jupiter.api.Test;
+
+class GreeterTest {
+  @Test
+  void greets() {
+    assertEquals("hello, world", Greeter.greet("world"));
   }
 }
