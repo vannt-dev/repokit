@@ -72,3 +72,10 @@ jobs:
       build-tool: gradle
       gradle-version: current
       commands: '["gradle check"]'
+  dotnet:
+    uses: ./.github/workflows/stack-dotnet.yml
+    with:
+      working-directory: fixtures/dotnet
+      os: '["ubuntu-latest","windows-latest"]'
+      dotnet-versions: '["8.0","9.0"]'
+      commands: '["dotnet restore","dotnet format --verify-no-changes --no-restore","dotnet build --no-restore","dotnet test --no-build"]'

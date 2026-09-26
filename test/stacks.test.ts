@@ -1,6 +1,7 @@
 import { writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
+import { STACK_IDS } from "../src/config/types.js";
 import { UsageError } from "../src/errors.js";
 import { detectStacks, getStackPack } from "../src/stacks/index.js";
 import { nodeStack } from "../src/stacks/node.js";
@@ -69,7 +70,7 @@ describe("registry", () => {
     expect(await detectStacks(await repoWith({ "deploy.sh": "", "package.json": "{}" }))).toEqual(["node"]);
   });
 
-  it("explains that a pack is not available yet", () => {
-    expect(() => getStackPack("dotnet")).toThrow(UsageError);
+  it("has a pack for every stack id", () => {
+    for (const id of STACK_IDS) expect(getStackPack(id).id).toBe(id);
   });
 });

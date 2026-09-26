@@ -1,0 +1,68 @@
+name: stack-dotnet
+
+on:
+  workflow_call:
+    inputs:
+      dotnet-versions:
+        description: JSON list of .NET SDK versions, all installed side by side
+        type: string
+        default: '["8.0","9.0"]'
+      os:
+        description: JSON list of runner labels
+        type: string
+        default: '["ubuntu-latest"]'
+      commands:
+        description: JSON list of shell commands run in order
+        type: string
+        default: '["dotnet restore","dotnet format --verify-no-changes --no-restore","dotnet build --no-restore","dotnet test --no-build"]'
+      working-directory:
+        description: Directory holding the solution or project
+        type: string
+        default: .
+
+permissions:
+  contents: read
+
+jobs:
+  dotnet:
+    name: dotnet (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.os) }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+      DOTNET_NOLOGO: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: sdks
+        name: List the SDK versions
+        env:
+          VERSIONS: ${{ inputs.dotnet-versions }}
+        run: |
+          {
+            echo "list<<EOF"
+            node -e 'for (const v of JSON.parse(process.env.VERSIONS)) console.log(v)'
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: ${{ steps.sdks.outputs.list }}
+      - name: Run checks
+        env:
+          COMMANDS: ${{ inputs.commands }}
+        run: |
+          node -e 'for (const c of JSON.parse(process.env.COMMANDS)) console.log(c)' | while IFS= read -r command; do
+            echo "::group::$command"
+            bash -c "$command" </dev/null
+            echo "::endgroup::"
+          done
