@@ -54,3 +54,21 @@ jobs:
       shell-scripts: "true"
       powershell-scripts: "true"
       test-command: ""
+  java-maven:
+    uses: ./.github/workflows/stack-java.yml
+    with:
+      working-directory: fixtures/java-maven
+      os: '["ubuntu-latest","windows-latest"]'
+      java-versions: '["17","21"]'
+      build-tool: maven
+      gradle-version: ""
+      commands: '["mvn -B verify"]'
+  java-gradle:
+    uses: ./.github/workflows/stack-java.yml
+    with:
+      working-directory: fixtures/java-gradle
+      os: '["ubuntu-latest"]'
+      java-versions: '["21"]'
+      build-tool: gradle
+      gradle-version: current
+      commands: '["gradle check"]'

@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import { dartStack } from "../src/stacks/dart.js";
+import { javaStack } from "../src/stacks/java.js";
 import { nodeStack } from "../src/stacks/node.js";
 import { pythonStack } from "../src/stacks/python.js";
 import { scriptStack } from "../src/stacks/script.js";
@@ -31,6 +32,7 @@ const REUSABLE = [
   "stack-script.yml",
   "stack-dart.yml",
   "stack-python.yml",
+  "stack-java.yml",
 ];
 
 /** Fixture jobs in workflow-tests.yml and the pack that resolves each fixture. Each stack task appends its rows. */
@@ -40,6 +42,8 @@ const FIXTURES: { job: string; dir: string; pack: StackPack }[] = [
   { job: "script", dir: "fixtures/script", pack: scriptStack },
   { job: "dart", dir: "fixtures/dart", pack: dartStack },
   { job: "python", dir: "fixtures/python", pack: pythonStack },
+  { job: "java-maven", dir: "fixtures/java-maven", pack: javaStack },
+  { job: "java-gradle", dir: "fixtures/java-gradle", pack: javaStack },
 ];
 
 const read = (name: string) => readFileSync(`.github/workflows/${name}`, "utf8");

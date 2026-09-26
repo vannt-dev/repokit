@@ -1,6 +1,7 @@
 import { STACK_IDS, type StackId } from "../config/types.js";
 import { UsageError } from "../errors.js";
 import { dartStack } from "./dart.js";
+import { javaStack } from "./java.js";
 import { nodeStack } from "./node.js";
 import { pythonStack } from "./python.js";
 import { scriptStack } from "./script.js";
@@ -11,6 +12,7 @@ const PACKS: Partial<Record<StackId, StackPack>> = {
   python: pythonStack,
   dart: dartStack,
   script: scriptStack,
+  java: javaStack,
 };
 
 export function getStackPack(id: StackId): StackPack {
