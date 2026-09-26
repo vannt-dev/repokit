@@ -1,5 +1,6 @@
 import { stringify } from "yaml";
-import { MANAGED_HEADER, type ModuleContext, type Output, type PlatformAdapter } from "../model.js";
+import { MANAGED_HEADER, type ModuleContext, type Output, type PlatformAdapter, type ReleaseInfo } from "../model.js";
+import { REUSABLE_REPO, WORKFLOW_REF } from "../version.js";
 
 const yamlFile = (module: string, path: string, data: unknown): Output => ({
   kind: "file",
@@ -7,6 +8,31 @@ const yamlFile = (module: string, path: string, data: unknown): Output => ({
   path,
   content: `# ${MANAGED_HEADER}\n${stringify(data)}`,
 });
+
+const WORKFLOW_KEYS = ["name", "on", "permissions", "concurrency", "env", "defaults", "jobs"] as const;
+
+/** Reference to a reusable workflow; local inside the repository that hosts them. */
+function workflowRef(ctx: ModuleContext, file: string): string {
+  const self = ctx.repo.owner !== null && `${ctx.repo.owner}/${ctx.repo.name}` === REUSABLE_REPO;
+  return self ? `./.github/workflows/${file}` : `${REUSABLE_REPO}/.github/workflows/${file}@${WORKFLOW_REF}`;
+}
+
+const workflowKey = (module: string, path: string, keyPath: string[], value: unknown): Output => ({
+  kind: "yaml",
+  module,
+  path,
+  keyPath,
+  value,
+  order: WORKFLOW_KEYS,
+});
+
+function defaultBranch(ctx: ModuleContext): string {
+  const branch = ctx.config.github?.default_branch;
+  return typeof branch === "string" && branch.length > 0 ? branch : "main";
+}
+
+const RELEASE_PLEASE_SCHEMA = "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json";
+const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 
 export const githubPlatform: PlatformAdapter = {
   id: "github",
@@ -87,5 +113,67 @@ export const githubPlatform: PlatformAdapter = {
       groups: { [`${ecosystem}-minor-and-patch`]: { "update-types": ["minor", "patch"] } },
     }));
     return [yamlFile("deps", ".github/dependabot.yml", { version: 2, updates })];
+  },
+
+  ciWorkflow(ctx: ModuleContext): Output[] {
+    const path = ".github/workflows/ci.yml";
+    const jobs: Output[] = [];
+    for (const stack of ctx.stacks) {
+      if (stack.ci) {
+        jobs.push(
+          workflowKey("ci", path, ["jobs", stack.id], {
+            uses: workflowRef(ctx, stack.ci.workflow),
+            with: stack.ci.with,
+          }),
+        );
+      }
+    }
+    if (ctx.config.modules.commits) {
+      jobs.push(workflowKey("ci", path, ["jobs", "commits"], { uses: workflowRef(ctx, "commitlint.yml") }));
+    }
+    if (jobs.length === 0) return [];
+    return [
+      workflowKey("ci", path, ["name"], "ci"),
+      workflowKey("ci", path, ["on"], { pull_request: null, push: { branches: [defaultBranch(ctx)] } }),
+      workflowKey("ci", path, ["permissions"], { contents: "read" }),
+      ...jobs,
+    ];
+  },
+
+  releaseAutomation(ctx: ModuleContext, release: ReleaseInfo): Output[] {
+    const path = ".github/workflows/release.yml";
+    return [
+      {
+        kind: "file",
+        module: "release",
+        path: "release-please-config.json",
+        content: json({
+          $schema: RELEASE_PLEASE_SCHEMA,
+          packages: {
+            ".": {
+              "release-type": release.type,
+              "changelog-path": "CHANGELOG.md",
+              "bump-minor-pre-major": true,
+              "include-component-in-tag": false,
+            },
+          },
+        }),
+      },
+      {
+        kind: "seed",
+        module: "release",
+        path: ".release-please-manifest.json",
+        content: json({ ".": release.version ?? "0.0.0" }),
+      },
+      workflowKey("release", path, ["name"], "release"),
+      workflowKey("release", path, ["on"], { push: { branches: [defaultBranch(ctx)] } }),
+      workflowKey("release", path, ["permissions"], { contents: "read" }),
+      workflowKey("release", path, ["jobs", "release"], {
+        uses: workflowRef(ctx, "release-please.yml"),
+        permissions: { contents: "write", "pull-requests": "write", issues: "write" },
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: a GitHub Actions expression, not a JS template
+        secrets: { token: "${{ secrets.RELEASE_PLEASE_TOKEN }}" },
+      }),
+    ];
   },
 };

@@ -1,0 +1,85 @@
+name: stack-node
+
+on:
+  workflow_call:
+    inputs:
+      node-versions:
+        description: JSON list of Node.js versions
+        type: string
+        default: '["22","24"]'
+      os:
+        description: JSON list of runner labels
+        type: string
+        default: '["ubuntu-latest"]'
+      package-manager:
+        description: npm, pnpm or yarn
+        type: string
+        default: npm
+      install-command:
+        description: Command that installs dependencies
+        type: string
+        default: npm ci
+      cache:
+        description: setup-node cache, "npm" or empty for none
+        type: string
+        default: npm
+      scripts:
+        description: JSON list of package scripts to run in order
+        type: string
+        default: '["test"]'
+      test-command:
+        description: Extra command run after the scripts
+        type: string
+        default: ""
+      working-directory:
+        description: Directory holding package.json
+        type: string
+        default: .
+
+permissions:
+  contents: read
+
+jobs:
+  node:
+    name: node ${{ matrix.node }} (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.os) }}
+        node: ${{ fromJSON(inputs.node-versions) }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    env:
+      COREPACK_ENABLE_DOWNLOAD_PROMPT: "0"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ matrix.node }}
+          cache: ${{ inputs.cache }}
+          cache-dependency-path: ${{ inputs.cache != '' && format('{0}/package-lock.json', inputs.working-directory) || '' }}
+      - name: Enable corepack
+        if: inputs.package-manager != 'npm'
+        run: corepack enable
+      - name: Install dependencies
+        run: ${{ inputs.install-command }}
+      - name: Run scripts
+        env:
+          PM: ${{ inputs.package-manager }}
+          SCRIPTS: ${{ inputs.scripts }}
+        run: |
+          node -e 'for (const s of JSON.parse(process.env.SCRIPTS)) console.log(s)' | while IFS= read -r script; do
+            echo "::group::$PM run $script"
+            "$PM" run "$script" </dev/null
+            echo "::endgroup::"
+          done
+      - name: Run the test command
+        if: inputs.test-command != ''
+        run: ${{ inputs.test-command }}

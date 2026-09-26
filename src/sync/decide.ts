@@ -22,6 +22,7 @@ export function decide(
 
 /** For a lock entry the standard no longer produces. */
 export function decideRemoval(entry: LockEntry, currentText: string | null): RemovalAction {
+  if (entry.target.kind === "seed") return "gone"; // other tools own a seed once it exists
   if (currentText === null) return "gone";
   return hashText(currentText) === entry.hash ? "delete" : "orphan-edited";
 }

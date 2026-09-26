@@ -1,0 +1,100 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { describe, expect, it } from "vitest";
+import { parse } from "yaml";
+import type { Output } from "../src/model.js";
+import { ciModule } from "../src/modules/ci.js";
+import { pickRelease, releaseModule } from "../src/modules/release.js";
+import { WORKFLOW_REF } from "../src/version.js";
+import { makeContext, nodeResolved, syncOnce, tempDir } from "./helpers.js";
+
+const keys = (outputs: Output[]) =>
+  Object.fromEntries(outputs.flatMap((o) => (o.kind === "yaml" ? [[o.keyPath.join("."), o.value]] : [])));
+
+describe("ci module", () => {
+  it("calls the reusable workflows at the moving major tag", () => {
+    const out = keys(ciModule.outputs(makeContext()));
+    expect(out.name).toBe("ci");
+    expect(out.on).toEqual({ pull_request: null, push: { branches: ["main"] } });
+    expect(out.permissions).toEqual({ contents: "read" });
+    expect(out["jobs.node"]).toEqual({
+      uses: `vannt-dev/repokeeper/.github/workflows/stack-node.yml@${WORKFLOW_REF}`,
+      with: nodeResolved().ci?.with,
+    });
+    expect(out["jobs.commits"]).toEqual({
+      uses: `vannt-dev/repokeeper/.github/workflows/commitlint.yml@${WORKFLOW_REF}`,
+    });
+  });
+
+  it("uses local references inside the repokeeper repository", () => {
+    const out = keys(ciModule.outputs(makeContext({ repo: { owner: "vannt-dev", name: "repokeeper" } })));
+    expect(out["jobs.node"]).toMatchObject({ uses: "./.github/workflows/stack-node.yml" });
+    expect(out["jobs.commits"]).toEqual({ uses: "./.github/workflows/commitlint.yml" });
+  });
+
+  it("follows the configured default branch and drops the commits job with the commits module", () => {
+    const ctx = makeContext({ config: { github: { default_branch: "trunk" } }, modules: { commits: false } });
+    const out = keys(ciModule.outputs(ctx));
+    expect(out.on).toEqual({ pull_request: null, push: { branches: ["trunk"] } });
+    expect(out["jobs.commits"]).toBeUndefined();
+  });
+
+  it("produces nothing when no job would run", () => {
+    const ctx = makeContext({ modules: { commits: false }, stacks: [nodeResolved({ ci: null })] });
+    expect(ciModule.outputs(ctx)).toEqual([]);
+  });
+
+  it("writes a workflow with its keys in the usual order", async () => {
+    const root = await tempDir();
+    await syncOnce(root, ciModule.outputs(makeContext()));
+    const text = await readFile(join(root, ".github/workflows/ci.yml"), "utf8");
+    expect(Object.keys(parse(text))).toEqual(["name", "on", "permissions", "jobs"]);
+  });
+});
+
+describe("release module", () => {
+  it("configures release-please for the stack's release type and seeds the manifest", () => {
+    const outputs = releaseModule.outputs(
+      makeContext({ stacks: [nodeResolved({ release: { type: "node", version: "0.3.0" } })] }),
+    );
+    const config = outputs.find((o) => o.path === "release-please-config.json");
+    expect(config?.kind).toBe("file");
+    expect(JSON.parse(config?.kind === "file" ? config.content : "")).toEqual({
+      $schema: "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+      packages: {
+        ".": {
+          "release-type": "node",
+          "changelog-path": "CHANGELOG.md",
+          "bump-minor-pre-major": true,
+          "include-component-in-tag": false,
+        },
+      },
+    });
+    const manifest = outputs.find((o) => o.path === ".release-please-manifest.json");
+    expect(manifest).toMatchObject({ kind: "seed", content: '{\n  ".": "0.3.0"\n}\n' });
+  });
+
+  it("adds a release workflow that calls the reusable one with write permissions", () => {
+    const out = keys(releaseModule.outputs(makeContext()));
+    expect(out.name).toBe("release");
+    expect(out.on).toEqual({ push: { branches: ["main"] } });
+    expect(out.permissions).toEqual({ contents: "read" });
+    expect(out["jobs.release"]).toEqual({
+      uses: `vannt-dev/repokeeper/.github/workflows/release-please.yml@${WORKFLOW_REF}`,
+      permissions: { contents: "write", "pull-requests": "write", issues: "write" },
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: a GitHub Actions expression, not a JS template
+      secrets: { token: "${{ secrets.RELEASE_PLEASE_TOKEN }}" },
+    });
+  });
+
+  it("prefers a language release type and falls back to simple at 0.0.0", () => {
+    const simple = nodeResolved({ id: "node", release: { type: "simple", version: null } });
+    expect(pickRelease([simple, nodeResolved({ release: { type: "node", version: "2.0.0" } })])).toEqual({
+      type: "node",
+      version: "2.0.0",
+    });
+    expect(pickRelease([])).toEqual({ type: "simple", version: null });
+    const manifest = releaseModule.outputs(makeContext({ stacks: [] })).find((o) => o.kind === "seed");
+    expect(manifest).toMatchObject({ content: '{\n  ".": "0.0.0"\n}\n' });
+  });
+});

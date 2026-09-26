@@ -5,13 +5,19 @@ export const PACKAGE_VERSION: string = (
 ).version;
 
 /** The standard this build of repokeeper applies. Bump it whenever generated output changes. */
-export const STANDARD_VERSION = "1.0.0";
+export const STANDARD_VERSION = "1.1.0";
 
 export const TOOL_VERSIONS = {
   lefthook: "2.1.14",
   commitlintCli: "21.2.3",
   commitlintConventional: "21.2.3",
 } as const;
+
+/** Repository hosting the reusable workflows that generated CI files call. */
+export const REUSABLE_REPO = "vannt-dev/repokeeper";
+
+/** Moving tag callers pin to: the major version of this repokeeper (v0 during 0.x). */
+export const WORKFLOW_REF = `v${PACKAGE_VERSION.split(".")[0]}`;
 
 export function compareVersions(a: string, b: string): number {
   const pa = a.split(".").map(Number);

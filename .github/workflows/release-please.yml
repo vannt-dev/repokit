@@ -1,0 +1,44 @@
+name: release-please
+
+on:
+  workflow_call:
+    secrets:
+      token:
+        description: Token for release-please. GITHUB_TOKEN is used when absent, but its pull requests do not trigger CI.
+        required: false
+    outputs:
+      release_created:
+        description: "'true' when this run created a release"
+        value: ${{ jobs.release-please.outputs.release_created }}
+      tag_name:
+        description: Tag of the release, such as v1.2.0
+        value: ${{ jobs.release-please.outputs.tag_name }}
+      version:
+        description: Version of the release, such as 1.2.0
+        value: ${{ jobs.release-please.outputs.version }}
+      major:
+        description: Major version of the release
+        value: ${{ jobs.release-please.outputs.major }}
+
+permissions:
+  contents: read
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+      major: ${{ steps.release.outputs.major }}
+    steps:
+      - id: release
+        uses: googleapis/release-please-action@45996ed1f6d02564a971a2fa1b5860e934307cf7 # v5.0.0
+        with:
+          token: ${{ secrets.token || github.token }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json

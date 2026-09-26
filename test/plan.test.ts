@@ -15,7 +15,10 @@ it("plans every core output for a node repository", () => {
     ".github/ISSUE_TEMPLATE/feature_request.yml",
     ".github/dependabot.yml",
     ".github/pull_request_template.md",
+    ".github/workflows/ci.yml",
+    ".github/workflows/release.yml",
     ".gitignore",
+    ".release-please-manifest.json",
     "CODE_OF_CONDUCT.md",
     "CONTRIBUTING.md",
     "LICENSE",
@@ -23,6 +26,7 @@ it("plans every core output for a node repository", () => {
     "commitlint.config.mjs",
     "lefthook.yml",
     "package.json",
+    "release-please-config.json",
   ]);
 });
 

@@ -8,12 +8,16 @@ export const LOCK_FILE = ".repokeeper/lock.json";
 
 export type Target =
   | { kind: "file"; path: string }
+  | { kind: "seed"; path: string }
   | { kind: "block"; path: string; id: string; comment: CommentStyle }
-  | { kind: "json"; path: string; keyPath: string[] };
+  | { kind: "json"; path: string; keyPath: string[] }
+  | { kind: "yaml"; path: string; keyPath: string[] };
 
 export function targetOf(output: Output): Target {
   if (output.kind === "file") return { kind: "file", path: output.path };
+  if (output.kind === "seed") return { kind: "seed", path: output.path };
   if (output.kind === "block") return { kind: "block", path: output.path, id: output.id, comment: output.comment };
+  if (output.kind === "yaml") return { kind: "yaml", path: output.path, keyPath: output.keyPath };
   return { kind: "json", path: output.path, keyPath: output.keyPath };
 }
 

@@ -1,0 +1,31 @@
+name: workflow-tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  node-npm:
+    uses: ./.github/workflows/stack-node.yml
+    with:
+      working-directory: fixtures/node
+      os: '["ubuntu-latest","windows-latest"]'
+      node-versions: '["22","24"]'
+      package-manager: npm
+      install-command: npm ci
+      cache: npm
+      scripts: '["test"]'
+  node-pnpm:
+    uses: ./.github/workflows/stack-node.yml
+    with:
+      working-directory: fixtures/node-pnpm
+      os: '["ubuntu-latest"]'
+      node-versions: '["24"]'
+      package-manager: pnpm
+      install-command: pnpm install --frozen-lockfile
+      cache: ""
+      scripts: '["test"]'
