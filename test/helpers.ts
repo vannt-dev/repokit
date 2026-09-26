@@ -27,6 +27,18 @@ export function nodeResolved(overrides: Partial<ResolvedStack> = {}): ResolvedSt
     install: "npm install",
     gitignore: ["Node"],
     dependabot: ["npm"],
+    ci: {
+      workflow: "stack-node.yml",
+      with: {
+        "node-versions": '["22","24"]',
+        os: '["ubuntu-latest"]',
+        "package-manager": "npm",
+        "install-command": "npm ci",
+        cache: "npm",
+        scripts: '["test"]',
+      },
+    },
+    release: { type: "node", version: "1.0.0" },
     ...overrides,
   };
 }

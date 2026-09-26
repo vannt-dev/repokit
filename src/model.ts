@@ -67,6 +67,20 @@ export interface StagedJob {
   run: string;
 }
 
+/** One job of the caller CI workflow: a reusable workflow in the repokeeper repository and its inputs. */
+export interface CiJob {
+  workflow: string;
+  with: Record<string, string>;
+}
+
+export type ReleaseType = "node" | "python" | "dart" | "maven" | "simple";
+
+export interface ReleaseInfo {
+  type: ReleaseType;
+  /** Current version read from the project, or null when it has none. */
+  version: string | null;
+}
+
 export interface ResolvedStack {
   id: StackId;
   /** lefthook pre-commit jobs; `{staged_files}` is filled in by lefthook. */
@@ -79,6 +93,9 @@ export interface ResolvedStack {
   gitignore: string[];
   /** Dependabot package ecosystems. */
   dependabot: string[];
+  /** CI job for this stack, or null when the stack has no reusable workflow. */
+  ci: CiJob | null;
+  release: ReleaseInfo;
 }
 
 export interface RepoInfo {
