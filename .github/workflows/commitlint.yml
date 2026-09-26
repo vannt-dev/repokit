@@ -1,0 +1,47 @@
+name: commitlint
+
+on:
+  workflow_call: {}
+
+permissions:
+  contents: read
+
+jobs:
+  commitlint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+      - name: Install commitlint
+        run: |
+          dir="$RUNNER_TEMP/commitlint"
+          mkdir -p "$dir"
+          cd "$dir"
+          echo '{ "private": true }' > package.json
+          npm install --no-audit --no-fund @commitlint/cli@21.2.3 @commitlint/config-conventional@21.2.3
+          cat > commitlint.config.mjs <<'EOF'
+          export default {
+            extends: ["@commitlint/config-conventional"],
+            rules: { "header-max-length": [2, "always", 100] },
+          };
+          EOF
+      - name: Check commit messages
+        env:
+          EVENT: ${{ github.event_name }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          dir="$RUNNER_TEMP/commitlint"
+          lint() { "$dir/node_modules/.bin/commitlint" --config "$dir/commitlint.config.mjs" --verbose "$@"; }
+          if [ "$EVENT" = "pull_request" ]; then
+            lint --from "$BASE" --to "$HEAD"
+          else
+            lint --last
+          fi

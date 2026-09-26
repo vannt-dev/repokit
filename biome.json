@@ -10,7 +10,8 @@
       "!.repokeeper",
       "!commitlint.config.mjs",
       "!package.json",
-      "!package-lock.json"
+      "!package-lock.json",
+      "!fixtures"
     ]
   },
   "formatter": { "enabled": true, "indentStyle": "space", "indentWidth": 2, "lineWidth": 120 },
