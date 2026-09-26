@@ -4,6 +4,7 @@ import { parse } from "yaml";
 import { dartStack } from "../src/stacks/dart.js";
 import { nodeStack } from "../src/stacks/node.js";
 import { pythonStack } from "../src/stacks/python.js";
+import { scriptStack } from "../src/stacks/script.js";
 import type { StackPack } from "../src/stacks/types.js";
 import { TOOL_VERSIONS } from "../src/version.js";
 
@@ -23,12 +24,20 @@ interface Workflow {
 }
 
 /** Reusable workflows hosted here. Each stack task appends its workflow. */
-const REUSABLE = ["stack-node.yml", "commitlint.yml", "release-please.yml", "stack-dart.yml", "stack-python.yml"];
+const REUSABLE = [
+  "stack-node.yml",
+  "commitlint.yml",
+  "release-please.yml",
+  "stack-script.yml",
+  "stack-dart.yml",
+  "stack-python.yml",
+];
 
 /** Fixture jobs in workflow-tests.yml and the pack that resolves each fixture. Each stack task appends its rows. */
 const FIXTURES: { job: string; dir: string; pack: StackPack }[] = [
   { job: "node-npm", dir: "fixtures/node", pack: nodeStack },
   { job: "node-pnpm", dir: "fixtures/node-pnpm", pack: nodeStack },
+  { job: "script", dir: "fixtures/script", pack: scriptStack },
   { job: "dart", dir: "fixtures/dart", pack: dartStack },
   { job: "python", dir: "fixtures/python", pack: pythonStack },
 ];

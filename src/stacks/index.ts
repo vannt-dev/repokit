@@ -3,9 +3,15 @@ import { UsageError } from "../errors.js";
 import { dartStack } from "./dart.js";
 import { nodeStack } from "./node.js";
 import { pythonStack } from "./python.js";
+import { scriptStack } from "./script.js";
 import type { StackPack } from "./types.js";
 
-const PACKS: Partial<Record<StackId, StackPack>> = { node: nodeStack, python: pythonStack, dart: dartStack };
+const PACKS: Partial<Record<StackId, StackPack>> = {
+  node: nodeStack,
+  python: pythonStack,
+  dart: dartStack,
+  script: scriptStack,
+};
 
 export function getStackPack(id: StackId): StackPack {
   const pack = PACKS[id];

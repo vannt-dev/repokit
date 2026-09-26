@@ -47,3 +47,10 @@ jobs:
       flutter: "false"
       install-command: dart pub get
       commands: '["dart format --output=none --set-exit-if-changed .","dart analyze","dart test"]'
+  script:
+    uses: ./.github/workflows/stack-script.yml
+    with:
+      working-directory: fixtures/script
+      shell-scripts: "true"
+      powershell-scripts: "true"
+      test-command: ""

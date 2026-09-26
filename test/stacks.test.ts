@@ -64,6 +64,11 @@ describe("registry", () => {
     expect(await detectStacks(await repoWith({ "README.md": "" }))).toEqual([]);
   });
 
+  it("detects the script stack only when no other stack is present", async () => {
+    expect(await detectStacks(await repoWith({ "deploy.sh": "" }))).toEqual(["script"]);
+    expect(await detectStacks(await repoWith({ "deploy.sh": "", "package.json": "{}" }))).toEqual(["node"]);
+  });
+
   it("explains that a pack is not available yet", () => {
     expect(() => getStackPack("dotnet")).toThrow(UsageError);
   });
