@@ -17,6 +17,8 @@ interface PackageJson {
 
 const OPTION_KEYS = ["versions", "os", "scripts"];
 const CI_SCRIPTS = ["typecheck", "lint", "test", "build"];
+/** NestJS projects scaffold end-to-end tests as a separate script. */
+const NEST_CI_SCRIPTS = ["typecheck", "lint", "test", "test:e2e", "build"];
 
 export const nodeStack: StackPack = {
   id: "node",
@@ -67,7 +69,9 @@ export const nodeStack: StackPack = {
             : "yarn install --frozen-lockfile";
     const scripts =
       stringList("node", options, "scripts") ??
-      CI_SCRIPTS.filter((name) => (name === "test" ? hasTest : pkg.scripts?.[name] !== undefined));
+      (existsSync(join(root, "nest-cli.json")) ? NEST_CI_SCRIPTS : CI_SCRIPTS).filter((name) =>
+        name === "test" ? hasTest : pkg.scripts?.[name] !== undefined,
+      );
     return {
       id: "node",
       staged,
