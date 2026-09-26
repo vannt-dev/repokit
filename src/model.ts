@@ -109,6 +109,8 @@ export interface PlatformAdapter {
   dependencyUpdates(ecosystems: string[]): Output[];
   /** The caller CI workflow; empty when no job would run. */
   ciWorkflow(ctx: ModuleContext): Output[];
+  /** release-please configuration, its manifest and the caller release workflow. */
+  releaseAutomation(ctx: ModuleContext, release: ReleaseInfo): Output[];
 }
 
 export interface ModuleContext {

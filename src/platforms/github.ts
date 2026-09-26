@@ -1,5 +1,5 @@
 import { stringify } from "yaml";
-import { MANAGED_HEADER, type ModuleContext, type Output, type PlatformAdapter } from "../model.js";
+import { MANAGED_HEADER, type ModuleContext, type Output, type PlatformAdapter, type ReleaseInfo } from "../model.js";
 import { REUSABLE_REPO, WORKFLOW_REF } from "../version.js";
 
 const yamlFile = (module: string, path: string, data: unknown): Output => ({
@@ -30,6 +30,9 @@ function defaultBranch(ctx: ModuleContext): string {
   const branch = ctx.config.github?.default_branch;
   return typeof branch === "string" && branch.length > 0 ? branch : "main";
 }
+
+const RELEASE_PLEASE_SCHEMA = "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json";
+const json = (value: unknown) => `${JSON.stringify(value, null, 2)}\n`;
 
 export const githubPlatform: PlatformAdapter = {
   id: "github",
@@ -134,6 +137,43 @@ export const githubPlatform: PlatformAdapter = {
       workflowKey("ci", path, ["on"], { pull_request: {}, push: { branches: [defaultBranch(ctx)] } }),
       workflowKey("ci", path, ["permissions"], { contents: "read" }),
       ...jobs,
+    ];
+  },
+
+  releaseAutomation(ctx: ModuleContext, release: ReleaseInfo): Output[] {
+    const path = ".github/workflows/release.yml";
+    return [
+      {
+        kind: "file",
+        module: "release",
+        path: "release-please-config.json",
+        content: json({
+          $schema: RELEASE_PLEASE_SCHEMA,
+          packages: {
+            ".": {
+              "release-type": release.type,
+              "changelog-path": "CHANGELOG.md",
+              "bump-minor-pre-major": true,
+              "include-component-in-tag": false,
+            },
+          },
+        }),
+      },
+      {
+        kind: "seed",
+        module: "release",
+        path: ".release-please-manifest.json",
+        content: json({ ".": release.version ?? "0.0.0" }),
+      },
+      workflowKey("release", path, ["name"], "release"),
+      workflowKey("release", path, ["on"], { push: { branches: [defaultBranch(ctx)] } }),
+      workflowKey("release", path, ["permissions"], { contents: "read" }),
+      workflowKey("release", path, ["jobs", "release"], {
+        uses: workflowRef(ctx, "release.yml"),
+        permissions: { contents: "write", "pull-requests": "write", issues: "write" },
+        // biome-ignore lint/suspicious/noTemplateCurlyInString: a GitHub Actions expression, not a JS template
+        secrets: { token: "${{ secrets.RELEASE_PLEASE_TOKEN }}" },
+      }),
     ];
   },
 };

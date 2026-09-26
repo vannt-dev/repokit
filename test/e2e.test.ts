@@ -1,10 +1,11 @@
 import { execFileSync } from "node:child_process";
 import { existsSync } from "node:fs";
-import { appendFile, readFile, writeFile } from "node:fs/promises";
+import { appendFile, readFile, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import { run } from "../src/cli.js";
+import { STANDARD_VERSION } from "../src/version.js";
 import { capture, tempDir } from "./helpers.js";
 
 const sh = (cwd: string, ...args: string[]) => execFileSync("git", args, { cwd, stdio: "pipe" });
@@ -151,12 +152,44 @@ describe("repokeeper end to end", () => {
     expect(drift.out).toContain("conflict   .github/workflows/ci.yml (jobs.node)");
   });
 
+  it("brings a repository initialised with standard 1.0.0 up to date", async () => {
+    const dir = await nodeRepo();
+    await repokeeper(dir, "init");
+    // what repokeeper 0.1.0 left behind: no ci or release outputs, standard 1.0.0
+    await rm(join(dir, ".github/workflows"), { recursive: true });
+    await rm(join(dir, "release-please-config.json"));
+    await rm(join(dir, ".release-please-manifest.json"));
+    const lockPath = join(dir, ".repokeeper/lock.json");
+    const lock = JSON.parse(await readFile(lockPath, "utf8"));
+    lock.standard = "1.0.0";
+    lock.entries = lock.entries.filter((e: { module: string }) => e.module !== "ci" && e.module !== "release");
+    await writeFile(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
+    const configPath = join(dir, ".repokeeper.yml");
+    await writeFile(
+      configPath,
+      (await readFile(configPath, "utf8")).replace(`standard: ${STANDARD_VERSION}`, "standard: 1.0.0"),
+    );
+    commitAll(dir);
+
+    expect((await repokeeper(dir, "check")).code).toBe(1);
+    const updated = await repokeeper(dir, "update");
+    expect(updated.code).toBe(0);
+    expect(updated.out).toContain("create     .github/workflows/ci.yml (jobs.node)");
+    expect(updated.out).toContain("create     .release-please-manifest.json");
+    expect(await readFile(configPath, "utf8")).toContain(`standard: ${STANDARD_VERSION}`);
+    commitAll(dir);
+    expect((await repokeeper(dir, "check")).code).toBe(0);
+  });
+
   it("changes nothing on a dry run and prints JSON for check", async () => {
     const dir = await nodeRepo();
     expect((await repokeeper(dir, "init", "--dry-run")).code).toBe(0);
     expect(existsSync(join(dir, ".repokeeper.yml"))).toBe(false);
     await repokeeper(dir, "init");
     const json = await repokeeper(dir, "check", "--json");
-    expect(JSON.parse(json.out)).toMatchObject({ clean: true, standard: { config: "1.0.0", current: "1.0.0" } });
+    expect(JSON.parse(json.out)).toMatchObject({
+      clean: true,
+      standard: { config: STANDARD_VERSION, current: STANDARD_VERSION },
+    });
   });
 });

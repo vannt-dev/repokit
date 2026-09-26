@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import type { Output } from "../src/model.js";
 import { ciModule } from "../src/modules/ci.js";
+import { pickRelease, releaseModule } from "../src/modules/release.js";
 import { WORKFLOW_REF } from "../src/version.js";
 import { makeContext, nodeResolved, syncOnce, tempDir } from "./helpers.js";
 
@@ -48,5 +49,52 @@ describe("ci module", () => {
     await syncOnce(root, ciModule.outputs(makeContext()));
     const text = await readFile(join(root, ".github/workflows/ci.yml"), "utf8");
     expect(Object.keys(parse(text))).toEqual(["name", "on", "permissions", "jobs"]);
+  });
+});
+
+describe("release module", () => {
+  it("configures release-please for the stack's release type and seeds the manifest", () => {
+    const outputs = releaseModule.outputs(
+      makeContext({ stacks: [nodeResolved({ release: { type: "node", version: "0.3.0" } })] }),
+    );
+    const config = outputs.find((o) => o.path === "release-please-config.json");
+    expect(config?.kind).toBe("file");
+    expect(JSON.parse(config?.kind === "file" ? config.content : "")).toEqual({
+      $schema: "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json",
+      packages: {
+        ".": {
+          "release-type": "node",
+          "changelog-path": "CHANGELOG.md",
+          "bump-minor-pre-major": true,
+          "include-component-in-tag": false,
+        },
+      },
+    });
+    const manifest = outputs.find((o) => o.path === ".release-please-manifest.json");
+    expect(manifest).toMatchObject({ kind: "seed", content: '{\n  ".": "0.3.0"\n}\n' });
+  });
+
+  it("adds a release workflow that calls the reusable one with write permissions", () => {
+    const out = keys(releaseModule.outputs(makeContext()));
+    expect(out.name).toBe("release");
+    expect(out.on).toEqual({ push: { branches: ["main"] } });
+    expect(out.permissions).toEqual({ contents: "read" });
+    expect(out["jobs.release"]).toEqual({
+      uses: `vannt-dev/repokeeper/.github/workflows/release.yml@${WORKFLOW_REF}`,
+      permissions: { contents: "write", "pull-requests": "write", issues: "write" },
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: a GitHub Actions expression, not a JS template
+      secrets: { token: "${{ secrets.RELEASE_PLEASE_TOKEN }}" },
+    });
+  });
+
+  it("prefers a language release type and falls back to simple at 0.0.0", () => {
+    const simple = nodeResolved({ id: "node", release: { type: "simple", version: null } });
+    expect(pickRelease([simple, nodeResolved({ release: { type: "node", version: "2.0.0" } })])).toEqual({
+      type: "node",
+      version: "2.0.0",
+    });
+    expect(pickRelease([])).toEqual({ type: "simple", version: null });
+    const manifest = releaseModule.outputs(makeContext({ stacks: [] })).find((o) => o.kind === "seed");
+    expect(manifest).toMatchObject({ content: '{\n  ".": "0.0.0"\n}\n' });
   });
 });

@@ -6,8 +6,8 @@ import { editorconfigModule } from "./editorconfig.js";
 import { gitignoreModule } from "./gitignore.js";
 import { healthModule } from "./health.js";
 import { hooksModule } from "./hooks.js";
+import { releaseModule } from "./release.js";
 
-/** `release` joins this list in Task 6 of the workflows plan. */
 export const MODULES: Module[] = [
   editorconfigModule,
   gitignoreModule,
@@ -16,4 +16,5 @@ export const MODULES: Module[] = [
   healthModule,
   depsModule,
   ciModule,
+  releaseModule,
 ];
