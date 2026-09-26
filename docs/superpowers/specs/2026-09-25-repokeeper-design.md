@@ -129,7 +129,7 @@ Every module defaults to `true`; `init` writes the file with detected stacks and
 
 | Module | Outputs | Standard |
 | --- | --- | --- |
-| editorconfig | `.editorconfig`, block in `.gitattributes` | UTF-8, LF, final newline, trimmed whitespace; `*.ps1`, `*.bat`, `*.cmd` keep CRLF; `* text=auto eol=lf` |
+| editorconfig | `.editorconfig`, block in `.gitattributes` | UTF-8, LF, final newline, trimmed whitespace; `*.ps1`, `*.bat`, `*.cmd` keep CRLF; `* text=auto eol=lf`; C#, F#, VB and Python use 4-space indentation (`dotnet format` enforces `.editorconfig`) |
 | commits | `commitlint.config.mjs` | Conventional Commits via `@commitlint/config-conventional`; header ≤ 100 characters |
 | hooks | `lefthook.yml` | `commit-msg`: commitlint. `pre-commit`: stack-pack staged commands on staged files only. `pre-push`: stack-pack test command. Installed with `lefthook install` |
 | health | `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md` (Contributor Covenant 2.1), issue forms, PR template, `CODEOWNERS` | GitHub community health files |
@@ -168,7 +168,7 @@ export default defineStack({
 | node | `package.json` | Biome if configured, otherwise Prettier + ESLint | package manager `test` script; npm/pnpm/yarn from the lockfile | Node 22, 24 |
 | python | `pyproject.toml`, `requirements.txt` | Ruff format + check, mypy when configured | pytest | 3.11 – 3.13 |
 | dart | `pubspec.yaml` | `dart format`, `flutter analyze` or `dart analyze` | `flutter test` or `dart test` | Flutter stable |
-| script | `*.sh`, `*.ps1` at the root or in `scripts/`, no other stack | shfmt + ShellCheck, PSScriptAnalyzer, markdownlint | repo-declared command, if any | ubuntu-latest, windows-latest |
+| script | `*.sh`, `*.ps1` at the root or in `scripts/`, no other stack | shfmt + ShellCheck, PSScriptAnalyzer (in CI; no local hook). markdownlint is left out: it fails most existing READMEs on line length | repo-declared command, if any | ubuntu-latest, windows-latest |
 | java | `pom.xml`, `build.gradle`, `build.gradle.kts` | Spotless (google-java-format) through the build | `mvn -B verify` or `./gradlew check` | Temurin 17, 21 |
 | dotnet | `*.sln`, `*.csproj` | `dotnet format --verify-no-changes` | `dotnet test` | .NET 8.0, 9.0 |
 
@@ -178,7 +178,7 @@ A repository may list several packs; each contributes its commands, CI job and e
 | --- | --- | --- | --- |
 | node | `node` | `Node` | `npm` |
 | python | `python` | `Python` | `pip` |
-| dart | `dart` | `Dart` (plus `Flutter` entries when `flutter` is a dependency) | `pub` |
+| dart | `dart` | `Dart` (github/gitignore has no Flutter template; the `.gitignore` that `flutter create` writes stays outside repokeeper's block) | `pub` |
 | script | `simple` | none | none |
 | java | `maven` for Maven; `simple` with `gradle.properties` `version` as an extra file for Gradle | `Java`, plus `Maven` or `Gradle` | `maven` or `gradle` |
 | dotnet | `simple` with the `<Version>` element of `Directory.Build.props` (or the single `*.csproj`) as an extra file | `VisualStudio` | `nuget` |

@@ -155,6 +155,7 @@ export const githubPlatform: PlatformAdapter = {
               "changelog-path": "CHANGELOG.md",
               "bump-minor-pre-major": true,
               "include-component-in-tag": false,
+              ...(release.extraFiles && release.extraFiles.length > 0 ? { "extra-files": release.extraFiles } : {}),
             },
           },
         }),

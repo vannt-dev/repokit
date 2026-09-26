@@ -4,9 +4,9 @@ Keep every repository on one maintained standard: Conventional Commits, git hook
 files, editor and gitignore settings, Dependabot, CI and releases — applied once and kept in sync as
 the standard evolves.
 
-> Status: early development. Node repositories are supported, including CI and releases; more
-> stacks and GitHub settings are on the way. See the
-> [design](docs/superpowers/specs/2026-09-25-repokeeper-design.md).
+> Status: early development. Supported stacks: Node.js (including NestJS), Python, Dart and
+> Flutter, shell and PowerShell scripts, Java (Maven and Gradle) and .NET, each with CI and releases.
+> GitHub settings are on the way. See the [design](docs/superpowers/specs/2026-09-25-repokeeper-design.md).
 
 ## Usage
 

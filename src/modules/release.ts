@@ -1,8 +1,9 @@
 import type { Module, ReleaseInfo, ResolvedStack } from "../model.js";
 
-/** One release per repository: the first stack with a language release type wins, otherwise `simple`. */
+/** One release per repository: the first stack with a language release type wins, otherwise the first stack's `simple` release (which may name extra files). */
 export function pickRelease(stacks: ResolvedStack[]): ReleaseInfo {
-  return stacks.find((stack) => stack.release.type !== "simple")?.release ?? { type: "simple", version: null };
+  const language = stacks.find((stack) => stack.release.type !== "simple");
+  return language?.release ?? stacks[0]?.release ?? { type: "simple", version: null };
 }
 
 export const releaseModule: Module = {

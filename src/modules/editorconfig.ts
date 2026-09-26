@@ -11,6 +11,9 @@ trim_trailing_whitespace = true
 indent_style = space
 indent_size = 2
 
+[*.{cs,csx,vb,fs,fsx,fsi,py}]
+indent_size = 4
+
 [*.{ps1,psm1,bat,cmd}]
 end_of_line = crlf
 

@@ -181,6 +181,28 @@ describe("repokeeper end to end", () => {
     expect((await repokeeper(dir, "check")).code).toBe(0);
   });
 
+  it("applies the standard to a python repository without node", async () => {
+    const dir = await tempDir();
+    await writeFile(join(dir, "pyproject.toml"), '[project]\nname = "demo"\nversion = "0.2.0"\n');
+    sh(dir, "init", "-q", "-b", "main");
+    sh(dir, "config", "user.name", "Demo User");
+    sh(dir, "config", "user.email", "demo@example.com");
+    sh(dir, "config", "core.autocrlf", "false");
+    sh(dir, "add", "-A");
+    sh(dir, "commit", "-qm", "chore: initial");
+
+    expect((await repokeeper(dir, "init")).code).toBe(0);
+    expect(parse(await readFile(join(dir, ".repokeeper.yml"), "utf8")).stacks).toEqual(["python"]);
+    expect(existsSync(join(dir, "package.json"))).toBe(false);
+    expect(await readFile(join(dir, "lefthook.yml"), "utf8")).toContain("npx --yes --package @commitlint/cli@");
+    const ci = parse(await readFile(join(dir, ".github/workflows/ci.yml"), "utf8"));
+    expect(ci.jobs.python.uses).toMatch(/stack-python\.yml@v\d+$/);
+    expect(JSON.parse(await readFile(join(dir, ".release-please-manifest.json"), "utf8"))).toEqual({ ".": "0.2.0" });
+    expect(await readFile(join(dir, ".gitignore"), "utf8")).toContain("## Python (github/gitignore)");
+    commitAll(dir);
+    expect((await repokeeper(dir, "check")).code).toBe(0);
+  });
+
   it("changes nothing on a dry run and prints JSON for check", async () => {
     const dir = await nodeRepo();
     expect((await repokeeper(dir, "init", "--dry-run")).code).toBe(0);

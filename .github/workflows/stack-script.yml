@@ -1,0 +1,82 @@
+name: stack-script
+
+on:
+  workflow_call:
+    inputs:
+      shell-scripts:
+        description: '"true" to run ShellCheck and shfmt on *.sh'
+        type: string
+        default: "true"
+      powershell-scripts:
+        description: '"true" to run PSScriptAnalyzer on *.ps1'
+        type: string
+        default: "false"
+      test-command:
+        description: Test command run on Linux and Windows; empty for none
+        type: string
+        default: ""
+      working-directory:
+        description: Directory the checks start from
+        type: string
+        default: .
+
+permissions:
+  contents: read
+
+jobs:
+  shell:
+    if: inputs.shell-scripts == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: ShellCheck
+        run: git ls-files -z '*.sh' | xargs -0 --no-run-if-empty shellcheck
+      - name: shfmt
+        run: |
+          curl -fsSL -o "$RUNNER_TEMP/shfmt" https://github.com/mvdan/sh/releases/download/v3.14.1/shfmt_v3.14.1_linux_amd64
+          chmod +x "$RUNNER_TEMP/shfmt"
+          git ls-files -z '*.sh' | xargs -0 --no-run-if-empty "$RUNNER_TEMP/shfmt" -d
+  powershell:
+    if: inputs.powershell-scripts == 'true'
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    defaults:
+      run:
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: PSScriptAnalyzer
+        shell: pwsh
+        run: |
+          Install-Module PSScriptAnalyzer -RequiredVersion 1.25.0 -Force -Scope CurrentUser
+          $issues = Invoke-ScriptAnalyzer -Path . -Recurse
+          $issues | Format-Table -AutoSize
+          if ($issues) { exit 1 }
+  test:
+    if: inputs.test-command != ''
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - run: ${{ inputs.test-command }}

@@ -80,3 +80,16 @@ it("names the key of an invalid or unknown stack option", async () => {
     ".repokeeper.yml: stack_options.node.verions is not a known key (versions, os, scripts)",
   );
 });
+
+it("adds the NestJS end-to-end tests when nest-cli.json is present", async () => {
+  const scripts = {
+    lint: "eslint .",
+    test: "jest",
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    build: "nest build",
+  };
+  const nest = await repo({ scripts }, { "nest-cli.json": "{}", "package-lock.json": "{}" });
+  expect((await nodeStack.resolve(nest)).ci?.with.scripts).toBe('["lint","test","test:e2e","build"]');
+  const plain = await repo({ scripts });
+  expect((await nodeStack.resolve(plain)).ci?.with.scripts).toBe('["lint","test","build"]');
+});

@@ -1,7 +1,13 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
+import { dartStack } from "../src/stacks/dart.js";
+import { dotnetStack } from "../src/stacks/dotnet.js";
+import { javaStack } from "../src/stacks/java.js";
 import { nodeStack } from "../src/stacks/node.js";
+import { pythonStack } from "../src/stacks/python.js";
+import { scriptStack } from "../src/stacks/script.js";
+import type { StackPack } from "../src/stacks/types.js";
 import { TOOL_VERSIONS } from "../src/version.js";
 
 interface Step {
@@ -19,11 +25,40 @@ interface Workflow {
   jobs: Record<string, Job>;
 }
 
+/** Reusable workflows hosted here. Each stack task appends its workflow. */
+const REUSABLE = [
+  "stack-node.yml",
+  "commitlint.yml",
+  "release-please.yml",
+  "stack-script.yml",
+  "stack-dart.yml",
+  "stack-python.yml",
+  "stack-java.yml",
+  "stack-dotnet.yml",
+];
+
+/** Fixture jobs in workflow-tests.yml and the pack that resolves each fixture. Each stack task appends its rows. */
+const FIXTURES: { job: string; dir: string; pack: StackPack }[] = [
+  { job: "node-npm", dir: "fixtures/node", pack: nodeStack },
+  { job: "node-pnpm", dir: "fixtures/node-pnpm", pack: nodeStack },
+  { job: "script", dir: "fixtures/script", pack: scriptStack },
+  { job: "dart", dir: "fixtures/dart", pack: dartStack },
+  { job: "python", dir: "fixtures/python", pack: pythonStack },
+  { job: "java-maven", dir: "fixtures/java-maven", pack: javaStack },
+  { job: "java-gradle", dir: "fixtures/java-gradle", pack: javaStack },
+  { job: "dotnet", dir: "fixtures/dotnet", pack: dotnetStack },
+];
+
 const read = (name: string) => readFileSync(`.github/workflows/${name}`, "utf8");
 const workflow = (name: string) => parse(read(name)) as Workflow;
 const steps = (wf: Workflow) => Object.values(wf.jobs).flatMap((job) => job.steps ?? []);
+/** Inputs a fixture job may set differently from the pack: where it runs, and on which versions. */
+const comparable = (inputs: Record<string, string> = {}) =>
+  Object.fromEntries(
+    Object.entries(inputs).filter(([key]) => key !== "working-directory" && key !== "os" && !key.endsWith("-versions")),
+  );
 
-describe.each(["stack-node.yml", "commitlint.yml", "release-please.yml"])("%s", (name) => {
+describe.each(REUSABLE)("%s", (name) => {
   it("is a reusable workflow whose jobs all declare permissions", () => {
     const wf = workflow(name);
     expect(wf.on.workflow_call).toBeDefined();
@@ -33,38 +68,35 @@ describe.each(["stack-node.yml", "commitlint.yml", "release-please.yml"])("%s", 
   it("pins every action by commit SHA", () => {
     const uses = steps(workflow(name)).flatMap((step) => (step.uses ? [step.uses] : []));
     expect(uses.length).toBeGreaterThan(0);
-    for (const ref of uses) expect(ref).toMatch(/^[\w.-]+\/[\w.-]+@[0-9a-f]{40}$/);
+    for (const ref of uses) expect(ref).toMatch(/^[\w.-]+\/[\w.-]+(\/[\w.-]+)*@[0-9a-f]{40}$/);
+  });
+
+  it("keeps commands from reading the list they are looped over", () => {
+    for (const step of steps(workflow(name))) {
+      if (step.run?.includes("while IFS= read -r")) expect(step.run).toMatch(/<\/dev\/null\n/);
+    }
   });
 });
 
-it("stack-node accepts every input the node pack passes", async () => {
-  const inputs = Object.keys(workflow("stack-node.yml").on.workflow_call?.inputs ?? {});
-  const resolved = await nodeStack.resolve("fixtures/node");
-  expect(inputs).toEqual(
-    expect.arrayContaining([...Object.keys(resolved.ci?.with ?? {}), "working-directory", "test-command"]),
-  );
+describe.each(FIXTURES)("fixture $dir", ({ job, dir, pack }) => {
+  it("resolves to inputs its workflow accepts", async () => {
+    const ci = (await pack.resolve(dir)).ci;
+    expect(ci).not.toBeNull();
+    const inputs = Object.keys(workflow(ci?.workflow ?? "").on.workflow_call?.inputs ?? {});
+    expect(inputs).toEqual(expect.arrayContaining([...Object.keys(ci?.with ?? {}), "working-directory"]));
+  });
+
+  it("is exercised by workflow-tests with exactly what the pack resolves", async () => {
+    const ci = (await pack.resolve(dir)).ci;
+    const fixtureJob = workflow("workflow-tests.yml").jobs[job];
+    expect(fixtureJob?.uses).toBe(`./.github/workflows/${ci?.workflow}`);
+    expect(fixtureJob?.with?.["working-directory"]).toBe(dir);
+    expect(comparable(fixtureJob?.with)).toEqual(comparable(ci?.with));
+  });
 });
 
-it("stack-node keeps package scripts from reading the list of scripts", () => {
-  const loop = steps(workflow("stack-node.yml")).find((step) => step.run?.includes("while IFS= read -r script"));
-  expect(loop?.run).toContain('"$PM" run "$script" </dev/null');
-});
-
-it("workflow-tests calls stack-node with what the node pack resolves for each fixture", async () => {
-  const jobs = workflow("workflow-tests.yml").jobs;
-  const comparable = (inputs: Record<string, string> = {}) => {
-    const { "working-directory": _dir, os: _os, "node-versions": _versions, ...rest } = inputs;
-    return rest;
-  };
-  for (const [job, dir] of [
-    ["node-npm", "fixtures/node"],
-    ["node-pnpm", "fixtures/node-pnpm"],
-  ] as const) {
-    const resolved = await nodeStack.resolve(dir);
-    expect(jobs[job]?.uses).toBe("./.github/workflows/stack-node.yml");
-    expect(jobs[job]?.with?.["working-directory"]).toBe(dir);
-    expect(comparable(jobs[job]?.with)).toEqual(comparable(resolved.ci?.with));
-  }
+it("stack-node also accepts a custom test command", () => {
+  expect(Object.keys(workflow("stack-node.yml").on.workflow_call?.inputs ?? {})).toContain("test-command");
 });
 
 it("commitlint uses the standard's tool versions and header rule", () => {
@@ -74,7 +106,7 @@ it("commitlint uses the standard's tool versions and header rule", () => {
   expect(text).toContain(`"header-max-length": [2, "always", 100]`);
 });
 
-it("release exposes the outputs callers use", () => {
+it("release-please exposes the outputs callers use", () => {
   expect(Object.keys(workflow("release-please.yml").on.workflow_call?.outputs ?? {})).toEqual(
     expect.arrayContaining(["release_created", "tag_name", "version", "major"]),
   );

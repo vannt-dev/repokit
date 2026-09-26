@@ -29,3 +29,53 @@ jobs:
       install-command: pnpm install --frozen-lockfile
       cache: ""
       scripts: '["test"]'
+  python:
+    uses: ./.github/workflows/stack-python.yml
+    with:
+      working-directory: fixtures/python
+      os: '["ubuntu-latest","windows-latest"]'
+      python-versions: '["3.11","3.13"]'
+      manager: pip
+      install-command: python -m pip install -e . && python -m pip install ruff pytest
+      commands: '["ruff format --check .","ruff check .","python -m pytest"]'
+  dart:
+    uses: ./.github/workflows/stack-dart.yml
+    with:
+      working-directory: fixtures/dart
+      os: '["ubuntu-latest","windows-latest"]'
+      sdk-versions: '["stable"]'
+      flutter: "false"
+      install-command: dart pub get
+      commands: '["dart format --output=none --set-exit-if-changed .","dart analyze","dart test"]'
+  script:
+    uses: ./.github/workflows/stack-script.yml
+    with:
+      working-directory: fixtures/script
+      shell-scripts: "true"
+      powershell-scripts: "true"
+      test-command: ""
+  java-maven:
+    uses: ./.github/workflows/stack-java.yml
+    with:
+      working-directory: fixtures/java-maven
+      os: '["ubuntu-latest","windows-latest"]'
+      java-versions: '["17","21"]'
+      build-tool: maven
+      gradle-version: ""
+      commands: '["mvn -B verify"]'
+  java-gradle:
+    uses: ./.github/workflows/stack-java.yml
+    with:
+      working-directory: fixtures/java-gradle
+      os: '["ubuntu-latest"]'
+      java-versions: '["21"]'
+      build-tool: gradle
+      gradle-version: current
+      commands: '["gradle check"]'
+  dotnet:
+    uses: ./.github/workflows/stack-dotnet.yml
+    with:
+      working-directory: fixtures/dotnet
+      os: '["ubuntu-latest","windows-latest"]'
+      dotnet-versions: '["8.0","9.0"]'
+      commands: '["dotnet restore","dotnet format --verify-no-changes --no-restore","dotnet build --no-restore","dotnet test --no-build"]'

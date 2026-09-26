@@ -1,10 +1,10 @@
 import { existsSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
-import { CONFIG_FILE } from "../config/load.js";
-import { ConfigError, UsageError } from "../errors.js";
+import { UsageError } from "../errors.js";
 import type { StagedJob } from "../model.js";
-import type { StackOptions, StackPack } from "./types.js";
+import { checkKeys, stringList } from "./support.js";
+import type { StackPack } from "./types.js";
 
 const NPM_PLACEHOLDER_TEST = 'echo "Error: no test specified" && exit 1';
 
@@ -17,29 +17,14 @@ interface PackageJson {
 
 const OPTION_KEYS = ["versions", "os", "scripts"];
 const CI_SCRIPTS = ["typecheck", "lint", "test", "build"];
-
-function stringList(options: StackOptions, key: string): string[] | undefined {
-  const value = options[key];
-  if (value === undefined) return undefined;
-  const valid =
-    Array.isArray(value) && value.length > 0 && value.every((v) => typeof v === "string" || typeof v === "number");
-  if (!valid) throw new ConfigError(`${CONFIG_FILE}: stack_options.node.${key} must be a non-empty list of strings`);
-  return value.map(String);
-}
-
-function checkKeys(options: StackOptions): void {
-  for (const key of Object.keys(options)) {
-    if (!OPTION_KEYS.includes(key)) {
-      throw new ConfigError(`${CONFIG_FILE}: stack_options.node.${key} is not a known key (${OPTION_KEYS.join(", ")})`);
-    }
-  }
-}
+/** NestJS projects scaffold end-to-end tests as a separate script. */
+const NEST_CI_SCRIPTS = ["typecheck", "lint", "test", "test:e2e", "build"];
 
 export const nodeStack: StackPack = {
   id: "node",
-  detect: ["package.json"],
+  detect: (root) => existsSync(join(root, "package.json")),
   async resolve(root, options = {}) {
-    checkKeys(options);
+    checkKeys("node", options, OPTION_KEYS);
     let pkg: PackageJson;
     try {
       pkg = JSON.parse(await readFile(join(root, "package.json"), "utf8")) as PackageJson;
@@ -83,8 +68,10 @@ export const nodeStack: StackPack = {
             ? "yarn install --immutable"
             : "yarn install --frozen-lockfile";
     const scripts =
-      stringList(options, "scripts") ??
-      CI_SCRIPTS.filter((name) => (name === "test" ? hasTest : pkg.scripts?.[name] !== undefined));
+      stringList("node", options, "scripts") ??
+      (existsSync(join(root, "nest-cli.json")) ? NEST_CI_SCRIPTS : CI_SCRIPTS).filter((name) =>
+        name === "test" ? hasTest : pkg.scripts?.[name] !== undefined,
+      );
     return {
       id: "node",
       staged,
@@ -95,8 +82,8 @@ export const nodeStack: StackPack = {
       ci: {
         workflow: "stack-node.yml",
         with: {
-          "node-versions": JSON.stringify(stringList(options, "versions") ?? ["22", "24"]),
-          os: JSON.stringify(stringList(options, "os") ?? ["ubuntu-latest"]),
+          "node-versions": JSON.stringify(stringList("node", options, "versions") ?? ["22", "24"]),
+          os: JSON.stringify(stringList("node", options, "os") ?? ["ubuntu-latest"]),
           "package-manager": pm,
           "install-command": ciInstall,
           // setup-node can only cache npm here: pnpm and yarn come from corepack after it runs

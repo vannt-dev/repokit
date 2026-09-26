@@ -1,6 +1,7 @@
 import { UsageError } from "../errors.js";
 import { MANAGED_HEADER, type Module, type Output } from "../model.js";
 import { readTemplate } from "../templates.js";
+import { TOOL_VERSIONS } from "../version.js";
 
 const MIT = (holder: string) => `MIT License
 
@@ -56,9 +57,11 @@ export const healthModule: Module = {
     );
 
     const install = ctx.stacks.map((s) => s.install).filter((c): c is string => c !== null);
-    const setup = install.length
-      ? `Run ${install.map((c) => `\`${c}\``).join(" and ")}. Installing the dependencies also installs the git hooks (lefthook).`
-      : "Install lefthook to enable the git hooks: https://lefthook.dev.";
+    const run = install.length ? `Run ${install.map((c) => `\`${c}\``).join(" and ")}.` : "";
+    const hooks = ctx.stacks.some((s) => s.id === "node")
+      ? "Installing the dependencies also installs the git hooks (lefthook)."
+      : `Then run \`npx --yes lefthook@${TOOL_VERSIONS.lefthook} install\` once to enable the git hooks (they need Node.js 22 or newer).`;
+    const setup = [run, hooks].filter(Boolean).join(" ");
     outputs.push(
       md(
         "CONTRIBUTING.md",
