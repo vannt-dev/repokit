@@ -117,7 +117,7 @@
     {
       "id": "file:lefthook.yml",
       "module": "hooks",
-      "hash": "4df0f282b2f4d599cdfea9ccb2e42cb5b06ad9a1baae449d17dd8c7d289744cf",
+      "hash": "3394ec96e98534c34a04001ae35d4857073a5a3d893b0fb0eade17d3f6a0026f",
       "target": {
         "kind": "file",
         "path": "lefthook.yml"

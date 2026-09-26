@@ -1,4 +1,11 @@
 # Managed by repokit (https://github.com/vannt-dev/repokit). Edits are reported by `repokit check`.
+pre-commit:
+  parallel: true
+  jobs:
+    - name: node:biome
+      glob: "*.{js,jsx,ts,tsx,mjs,cjs,json,jsonc,css}"
+      run: npx biome check --write --no-errors-on-unmatched {staged_files}
+      stage_fixed: true
 commit-msg:
   jobs:
     - name: commitlint
