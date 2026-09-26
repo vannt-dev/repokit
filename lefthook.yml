@@ -1,0 +1,9 @@
+# Managed by repokit (https://github.com/vannt-dev/repokit). Edits are reported by `repokit check`.
+commit-msg:
+  jobs:
+    - name: commitlint
+      run: npx --no-install commitlint --edit {1}
+pre-push:
+  jobs:
+    - name: node:test
+      run: npm test
