@@ -38,3 +38,12 @@ jobs:
       manager: pip
       install-command: python -m pip install -e . && python -m pip install ruff pytest
       commands: '["ruff format --check .","ruff check .","python -m pytest"]'
+  dart:
+    uses: ./.github/workflows/stack-dart.yml
+    with:
+      working-directory: fixtures/dart
+      os: '["ubuntu-latest","windows-latest"]'
+      sdk-versions: '["stable"]'
+      flutter: "false"
+      install-command: dart pub get
+      commands: '["dart format --output=none --set-exit-if-changed .","dart analyze","dart test"]'

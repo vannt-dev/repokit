@@ -1,0 +1,72 @@
+name: stack-dart
+
+on:
+  workflow_call:
+    inputs:
+      sdk-versions:
+        description: JSON list of Dart SDK versions, or Flutter channels when flutter is true
+        type: string
+        default: '["stable"]'
+      os:
+        description: JSON list of runner labels
+        type: string
+        default: '["ubuntu-latest"]'
+      flutter:
+        description: '"true" to set up Flutter instead of the Dart SDK'
+        type: string
+        default: "false"
+      install-command:
+        description: Command that fetches the packages
+        type: string
+        default: dart pub get
+      commands:
+        description: JSON list of shell commands run in order
+        type: string
+        default: '["dart format --output=none --set-exit-if-changed .","dart analyze"]'
+      working-directory:
+        description: Directory holding pubspec.yaml
+        type: string
+        default: .
+
+permissions:
+  contents: read
+
+jobs:
+  dart:
+    name: ${{ inputs.flutter == 'true' && 'flutter' || 'dart' }} ${{ matrix.sdk }} (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.os) }}
+        sdk: ${{ fromJSON(inputs.sdk-versions) }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: inputs.flutter == 'true'
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
+        with:
+          channel: ${{ matrix.sdk }}
+          cache: true
+      - if: inputs.flutter != 'true'
+        uses: dart-lang/setup-dart@6afc89df92d6eb3834022f73cd65adc8cdfcb92d # v1.8.1
+        with:
+          sdk: ${{ matrix.sdk }}
+      - name: Install dependencies
+        run: ${{ inputs.install-command }}
+      - name: Run checks
+        env:
+          COMMANDS: ${{ inputs.commands }}
+        run: |
+          node -e 'for (const c of JSON.parse(process.env.COMMANDS)) console.log(c)' | while IFS= read -r command; do
+            echo "::group::$command"
+            bash -c "$command" </dev/null
+            echo "::endgroup::"
+          done
