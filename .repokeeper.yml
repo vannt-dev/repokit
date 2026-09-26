@@ -1,6 +1,6 @@
 # repokeeper configuration: https://github.com/vannt-dev/repokeeper
 schema: 1
-standard: 1.0.0
+standard: 1.1.0
 platform: github
 stacks:
   - node
@@ -21,5 +21,5 @@ modules:
 owned: []
 stack_options:
   node:
-    os: [ubuntu-latest, windows-latest]
-    scripts: [typecheck, lint, test, build, standard]
+    os: [ ubuntu-latest, windows-latest ]
+    scripts: [ typecheck, lint, test, build, standard ]
