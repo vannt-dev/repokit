@@ -10,10 +10,20 @@ standard evolves.
 
 ## Usage
 
+repokit is not on npm yet. Until the first release, build it from source and link the command:
+
 ```bash
-npx @vannt-dev/repokit init     # detect the stack, write .repokit.yml, apply the standard
-npx @vannt-dev/repokit check    # report drift; exits 1 when the repository has drifted
-npx @vannt-dev/repokit update   # move to the latest standard without overwriting your edits
+git clone https://github.com/vannt-dev/repokit.git
+cd repokit && npm ci && npm run build && npm link
+```
+
+Then, in the repository you want to standardise (commit your work first — repokit refuses to
+write over uncommitted or untracked files unless you pass `--force`):
+
+```bash
+repokit init     # detect the stack, write .repokit.yml, apply the standard
+repokit check    # report drift; exits 1 when the repository has drifted
+repokit update   # move to the latest standard without overwriting your edits
 ```
 
 `init` never overwrites a file you already have: it reports it as unmanaged. Pass

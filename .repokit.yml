@@ -18,5 +18,7 @@ modules:
     contact: https://github.com/vannt-dev
     codeowners:
       - "@vannt-dev"
-owned: []
+# Hand-written until the ci module ships (plan 2); remove this entry to let repokit manage it.
+owned:
+  - .github/workflows/ci.yml
 stack_options: {}
