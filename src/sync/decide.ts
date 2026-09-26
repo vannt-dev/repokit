@@ -7,7 +7,12 @@ export type Action = "create" | "write" | "adopt" | "unchanged" | "conflict" | "
 export type RemovalAction = "delete" | "orphan-edited" | "gone";
 
 /** The update decision table from the spec, section 7. */
-export function decide(output: Output, currentText: string | null, entry: LockEntry | undefined, adopt: boolean): Action {
+export function decide(
+  output: Output,
+  currentText: string | null,
+  entry: LockEntry | undefined,
+  adopt: boolean,
+): Action {
   if (currentText === null) return "create";
   const current = hashText(currentText);
   if (current === hashText(desiredText(output))) return "unchanged";

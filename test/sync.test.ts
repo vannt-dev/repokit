@@ -46,9 +46,17 @@ describe("sync", () => {
     const root = await tempDir();
     await syncTo(root, v1);
     await writeFile(join(root, "nested/dir/a.txt"), "mine\n");
-    const v2: Output[] = [{ ...v1[0], content: "a2\n" } as Output, { ...v1[1], body: "dist/\nbuild/" } as Output, v1[2] as Output];
+    const v2: Output[] = [
+      { ...v1[0], content: "a2\n" } as Output,
+      { ...v1[1], body: "dist/\nbuild/" } as Output,
+      v1[2] as Output,
+    ];
     const result = await syncTo(root, v2);
-    expect(actions(result)).toEqual({ "nested/dir/a.txt": "conflict", ".gitignore": "write", "package.json": "unchanged" });
+    expect(actions(result)).toEqual({
+      "nested/dir/a.txt": "conflict",
+      ".gitignore": "write",
+      "package.json": "unchanged",
+    });
     expect(await readFile(join(root, "nested/dir/a.txt"), "utf8")).toBe("mine\n");
     expect(await readFile(join(root, "nested/dir/a.txt.repokit-new"), "utf8")).toBe("a2\n");
     // The conflict keeps its old lock entry, so it is still reported next time.

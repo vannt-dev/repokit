@@ -4,9 +4,27 @@ import type { CommentStyle } from "./sync/block.js";
 export const MANAGED_HEADER =
   "Managed by repokit (https://github.com/vannt-dev/repokit). Edits are reported by `repokit check`.";
 
-export interface FileOutput { kind: "file"; path: string; content: string; module: string }
-export interface BlockOutput { kind: "block"; path: string; id: string; body: string; comment: CommentStyle; module: string }
-export interface JsonOutput { kind: "json"; path: string; keyPath: string[]; value: unknown; module: string }
+export interface FileOutput {
+  kind: "file";
+  path: string;
+  content: string;
+  module: string;
+}
+export interface BlockOutput {
+  kind: "block";
+  path: string;
+  id: string;
+  body: string;
+  comment: CommentStyle;
+  module: string;
+}
+export interface JsonOutput {
+  kind: "json";
+  path: string;
+  keyPath: string[];
+  value: unknown;
+  module: string;
+}
 export type Output = FileOutput | BlockOutput | JsonOutput;
 
 export function outputId(output: Output): string {
@@ -21,7 +39,11 @@ export function describeOutput(output: Output): string {
   return `${output.path} (${output.keyPath.join(".")})`;
 }
 
-export interface StagedJob { name: string; glob: string; run: string }
+export interface StagedJob {
+  name: string;
+  glob: string;
+  run: string;
+}
 
 export interface ResolvedStack {
   id: StackId;
@@ -37,7 +59,10 @@ export interface ResolvedStack {
   dependabot: string[];
 }
 
-export interface RepoInfo { owner: string | null; name: string }
+export interface RepoInfo {
+  owner: string | null;
+  name: string;
+}
 
 export interface PlatformAdapter {
   id: "github";

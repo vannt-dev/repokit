@@ -58,7 +58,9 @@ export async function initCommand(root: string, options: CommandOptions, io: Io)
   await writeFile(join(root, CONFIG_FILE), renderConfig(config));
   await applySync(root, result, null, STANDARD_VERSION);
   io.out(`applied standard ${STANDARD_VERSION}; wrote ${CONFIG_FILE}`);
-  io.out(`next: install dependencies (this installs the git hooks), then commit with "chore(repokit): apply standard ${STANDARD_VERSION}"`);
+  io.out(
+    `next: install dependencies (this installs the git hooks), then commit with "chore(repokit): apply standard ${STANDARD_VERSION}"`,
+  );
   return 0;
 }
 
@@ -70,7 +72,12 @@ async function relock(root: string, options: CommandOptions, io: Io): Promise<nu
   for (const output of planOutputs(ctx)) {
     const current = await readCurrent(root, targetOf(output));
     if (current === null) continue;
-    lock.entries.push({ id: outputId(output), module: output.module, hash: hashText(current), target: targetOf(output) });
+    lock.entries.push({
+      id: outputId(output),
+      module: output.module,
+      hash: hashText(current),
+      target: targetOf(output),
+    });
     io.out(`recorded   ${output.path}`);
   }
   if (options.dryRun) {

@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 import { Ajv, type ErrorObject } from "ajv";
-import { type Document, LineCounter, isNode, parseDocument, stringify } from "yaml";
+import { type Document, isNode, LineCounter, parseDocument, stringify } from "yaml";
 import { ConfigError } from "../errors.js";
 import { configSchema } from "./schema.js";
 import type { ModulesConfig, RepokitConfig } from "./types.js";
@@ -34,7 +34,9 @@ export function parseConfig(text: string): RepokitConfig {
     const path = pathOf(error);
     throw new ConfigError(`${CONFIG_FILE}:${lineOf(doc, lineCounter, path)}: ${describe(error, path)}`);
   }
-  return withDefaults(data as Partial<RepokitConfig> & Pick<RepokitConfig, "schema" | "standard" | "platform" | "stacks">);
+  return withDefaults(
+    data as Partial<RepokitConfig> & Pick<RepokitConfig, "schema" | "standard" | "platform" | "stacks">,
+  );
 }
 
 export function renderConfig(config: RepokitConfig): string {

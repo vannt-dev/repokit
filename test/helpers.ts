@@ -29,7 +29,12 @@ export function nodeResolved(overrides: Partial<ResolvedStack> = {}): ResolvedSt
 }
 
 export function makeContext(
-  overrides: { config?: Partial<RepokitConfig>; modules?: Partial<ModulesConfig>; stacks?: ResolvedStack[]; repo?: RepoInfo } = {},
+  overrides: {
+    config?: Partial<RepokitConfig>;
+    modules?: Partial<ModulesConfig>;
+    stacks?: ResolvedStack[];
+    repo?: RepoInfo;
+  } = {},
 ): ModuleContext {
   const base = defaultConfig({
     stacks: ["node"],

@@ -5,7 +5,7 @@ import { outputId } from "../model.js";
 import { planOutputs } from "../plan.js";
 import { readLock } from "../sync/lock.js";
 import { computeSync } from "../sync/sync.js";
-import { STANDARD_VERSION, compareVersions } from "../version.js";
+import { compareVersions, STANDARD_VERSION } from "../version.js";
 import { buildContext } from "./context.js";
 import { type CommandOptions, hasDrift, printResult } from "./report.js";
 
@@ -33,7 +33,9 @@ export async function checkCommand(root: string, options: CommandOptions, io: Io
         clean,
         standard: { config: config.standard, lock: lock.standard, current: STANDARD_VERSION },
         items: [
-          ...result.decisions.filter((d) => d.action !== "unchanged").map((d) => ({ id: outputId(d.output), path: d.output.path, action: d.action })),
+          ...result.decisions
+            .filter((d) => d.action !== "unchanged")
+            .map((d) => ({ id: outputId(d.output), path: d.output.path, action: d.action })),
           ...result.removals.map((r) => ({ id: r.entry.id, path: r.entry.target.path, action: r.action })),
         ],
       }),

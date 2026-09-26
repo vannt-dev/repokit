@@ -1,14 +1,31 @@
 import { type Output, outputId } from "../model.js";
-import { type Action, type RemovalAction, decide, decideRemoval } from "./decide.js";
+import { type Action, decide, decideRemoval, type RemovalAction } from "./decide.js";
 import { type Lock, type LockEntry, targetOf } from "./lock.js";
 import { readCurrent } from "./state.js";
 
-export interface Decision { output: Output; action: Action }
-export interface Removal { entry: LockEntry; action: RemovalAction }
-export interface SyncResult { decisions: Decision[]; removals: Removal[] }
-export interface SyncOptions { adopt: Set<string> | "all"; accept: Set<string> }
+export interface Decision {
+  output: Output;
+  action: Action;
+}
+export interface Removal {
+  entry: LockEntry;
+  action: RemovalAction;
+}
+export interface SyncResult {
+  decisions: Decision[];
+  removals: Removal[];
+}
+export interface SyncOptions {
+  adopt: Set<string> | "all";
+  accept: Set<string>;
+}
 
-export async function computeSync(root: string, outputs: Output[], lock: Lock | null, options: SyncOptions): Promise<SyncResult> {
+export async function computeSync(
+  root: string,
+  outputs: Output[],
+  lock: Lock | null,
+  options: SyncOptions,
+): Promise<SyncResult> {
   const entries = new Map((lock?.entries ?? []).map((e) => [e.id, e]));
   const decisions: Decision[] = [];
   for (const output of outputs) {
@@ -20,7 +37,8 @@ export async function computeSync(root: string, outputs: Output[], lock: Lock | 
   const wanted = new Set(outputs.map(outputId));
   const removals: Removal[] = [];
   for (const entry of entries.values()) {
-    if (!wanted.has(entry.id)) removals.push({ entry, action: decideRemoval(entry, await readCurrent(root, entry.target)) });
+    if (!wanted.has(entry.id))
+      removals.push({ entry, action: decideRemoval(entry, await readCurrent(root, entry.target)) });
   }
   return { decisions, removals };
 }

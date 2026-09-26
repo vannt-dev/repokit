@@ -34,9 +34,13 @@ export async function updateCommand(root: string, options: CommandOptions, io: I
   }
   const conflicts = result.decisions.filter((d) => d.action === "conflict");
   if (conflicts.length > 0) {
-    io.out(`${conflicts.length} file(s) kept because they were edited locally; new versions are beside them as *.repokit-new`);
+    io.out(
+      `${conflicts.length} file(s) kept because they were edited locally; new versions are beside them as *.repokit-new`,
+    );
     return 1;
   }
-  io.out(`repository is on standard ${STANDARD_VERSION}; commit with "chore(repokit): update standard to ${STANDARD_VERSION}"`);
+  io.out(
+    `repository is on standard ${STANDARD_VERSION}; commit with "chore(repokit): update standard to ${STANDARD_VERSION}"`,
+  );
   return 0;
 }

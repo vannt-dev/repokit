@@ -31,7 +31,14 @@ describe("parseConfig", () => {
       "schema: 1\nstandard: 1.0.0\nplatform: github\nstacks: [node]\nmodules:\n  health: false\n",
     );
     expect(config.modules).toEqual({
-      editorconfig: true, commits: true, hooks: true, ci: true, release: true, deps: true, gitignore: true, health: false,
+      editorconfig: true,
+      commits: true,
+      hooks: true,
+      ci: true,
+      release: true,
+      deps: true,
+      gitignore: true,
+      health: false,
     });
     expect(config.owned).toEqual([]);
     expect(config.stack_options).toEqual({});
@@ -42,7 +49,8 @@ describe("parseConfig", () => {
   });
 
   it("names the line and key of an unknown key", () => {
-    const text = "schema: 1\nstandard: 1.0.0\nplatform: github\nstacks: [node]\nmodules:\n  health: false\n  hoks: true\n";
+    const text =
+      "schema: 1\nstandard: 1.0.0\nplatform: github\nstacks: [node]\nmodules:\n  health: false\n  hoks: true\n";
     expect(errorOf(text)).toBe(".repokit.yml:7: modules.hoks is not a known key");
   });
 

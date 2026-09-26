@@ -19,7 +19,13 @@ export const hooksModule: Module = {
       { kind: "file", module: "hooks", path: "lefthook.yml", content: `# ${MANAGED_HEADER}\n${stringify(config)}` },
     ];
     if (ctx.stacks.some((s) => s.id === "node")) {
-      outputs.push({ kind: "json", module: "hooks", path: "package.json", keyPath: ["devDependencies", "lefthook"], value: `^${TOOL_VERSIONS.lefthook}` });
+      outputs.push({
+        kind: "json",
+        module: "hooks",
+        path: "package.json",
+        keyPath: ["devDependencies", "lefthook"],
+        value: `^${TOOL_VERSIONS.lefthook}`,
+      });
     }
     return outputs;
   },

@@ -25,7 +25,12 @@ export const githubPlatform: PlatformAdapter = {
             attributes: { label: "What happened?", description: "Include the steps to reproduce it." },
             validations: { required: true },
           },
-          { type: "textarea", id: "expected", attributes: { label: "What did you expect?" }, validations: { required: true } },
+          {
+            type: "textarea",
+            id: "expected",
+            attributes: { label: "What did you expect?" },
+            validations: { required: true },
+          },
           { type: "input", id: "version", attributes: { label: "Version" } },
         ],
       }),
@@ -34,7 +39,12 @@ export const githubPlatform: PlatformAdapter = {
         description: "Suggest an improvement",
         labels: ["enhancement"],
         body: [
-          { type: "textarea", id: "problem", attributes: { label: "What problem would this solve?" }, validations: { required: true } },
+          {
+            type: "textarea",
+            id: "problem",
+            attributes: { label: "What problem would this solve?" },
+            validations: { required: true },
+          },
           { type: "textarea", id: "proposal", attributes: { label: "What do you propose?" } },
         ],
       }),

@@ -10,14 +10,20 @@ import { desiredText, readCurrent } from "../src/sync/state.js";
 import { tempDir } from "./helpers.js";
 
 const file: Output = { kind: "file", module: "m", path: "a.txt", content: "new\n" };
-const entry = (text: string): LockEntry => ({ id: "file:a.txt", module: "m", hash: hashText(text), target: targetOf(file) });
+const entry = (text: string): LockEntry => ({
+  id: "file:a.txt",
+  module: "m",
+  hash: hashText(text),
+  target: targetOf(file),
+});
 
 describe("decide", () => {
   it("creates what is missing", () => expect(decide(file, null, undefined, false)).toBe("create"));
   it("leaves matching content alone", () => expect(decide(file, "new\n", entry("old\n"), false)).toBe("unchanged"));
   it("treats a CRLF checkout of the same content as unchanged", () =>
     expect(decide(file, "new\r\n", entry("new\n"), false)).toBe("unchanged"));
-  it("writes over content repokit wrote earlier", () => expect(decide(file, "old\n", entry("old\n"), false)).toBe("write"));
+  it("writes over content repokit wrote earlier", () =>
+    expect(decide(file, "old\n", entry("old\n"), false)).toBe("write"));
   it("flags content the user edited", () => expect(decide(file, "mine\n", entry("old\n"), false)).toBe("conflict"));
   it("does not take over an existing file", () => expect(decide(file, "mine\n", undefined, false)).toBe("unmanaged"));
   it("takes over an existing file when adopted", () => expect(decide(file, "mine\n", undefined, true)).toBe("adopt"));
@@ -38,9 +44,9 @@ describe("state", () => {
     expect(await readCurrent(root, { kind: "file", path: "a.txt" })).toBe("hello\n");
     expect(await readCurrent(root, { kind: "file", path: "missing.txt" })).toBeNull();
     expect(await readCurrent(root, { kind: "block", path: ".gitignore", id: "g", comment: "hash" })).toBe("dist/");
-    expect(await readCurrent(root, { kind: "json", path: "package.json", keyPath: ["devDependencies", "lefthook"] })).toBe(
-      '"^2.1.14"',
-    );
+    expect(
+      await readCurrent(root, { kind: "json", path: "package.json", keyPath: ["devDependencies", "lefthook"] }),
+    ).toBe('"^2.1.14"');
     expect(await readCurrent(root, { kind: "json", path: "package.json", keyPath: ["scripts", "x"] })).toBeNull();
     expect(desiredText({ kind: "json", module: "m", path: "package.json", keyPath: ["a"], value: "^1" })).toBe('"^1"');
   });

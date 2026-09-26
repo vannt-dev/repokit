@@ -7,4 +7,11 @@ import { healthModule } from "./health.js";
 import { hooksModule } from "./hooks.js";
 
 /** `ci` and `release` join this list in the reusable-workflows plan. */
-export const MODULES: Module[] = [editorconfigModule, gitignoreModule, commitsModule, hooksModule, healthModule, depsModule];
+export const MODULES: Module[] = [
+  editorconfigModule,
+  gitignoreModule,
+  commitsModule,
+  hooksModule,
+  healthModule,
+  depsModule,
+];

@@ -28,7 +28,8 @@ describe("health", () => {
     expect(out["SECURITY.md"]).toContain("https://github.com/vannt-dev/example/security/advisories/new");
     expect(out["CONTRIBUTING.md"]).toContain("`npm install`");
     expect(out[".github/CODEOWNERS"]).toContain("* @vannt-dev");
-    for (const path of Object.keys(out).filter((p) => p.endsWith(".yml"))) expect(() => parse(out[path] as string)).not.toThrow();
+    for (const path of Object.keys(out).filter((p) => p.endsWith(".yml")))
+      expect(() => parse(out[path] as string)).not.toThrow();
   });
 
   it("omits CODEOWNERS and the advisory link when the owner is unknown", () => {
@@ -45,7 +46,9 @@ describe("health", () => {
   it("leaves licensing alone when license is false and rejects unbundled licenses", () => {
     const off = makeContext({ modules: { health: { license: false, copyright: "x", contact: "x", codeowners: [] } } });
     expect(files(healthModule.outputs(off)).LICENSE).toBeUndefined();
-    const apache = makeContext({ modules: { health: { license: "Apache-2.0", copyright: "x", contact: "x", codeowners: [] } } });
+    const apache = makeContext({
+      modules: { health: { license: "Apache-2.0", copyright: "x", contact: "x", codeowners: [] } },
+    });
     expect(() => healthModule.outputs(apache)).toThrow(/Apache-2.0/);
   });
 
@@ -60,7 +63,10 @@ describe("deps", () => {
     expect(output?.path).toBe(".github/dependabot.yml");
     const config = parse((output as FileOutput).content);
     expect(config.version).toBe(2);
-    expect(config.updates.map((u: { "package-ecosystem": string }) => u["package-ecosystem"])).toEqual(["npm", "github-actions"]);
+    expect(config.updates.map((u: { "package-ecosystem": string }) => u["package-ecosystem"])).toEqual([
+      "npm",
+      "github-actions",
+    ]);
     expect(config.updates[0].schedule).toEqual({ interval: "weekly" });
     expect(config.updates[0].groups["npm-minor-and-patch"]["update-types"]).toEqual(["minor", "patch"]);
   });

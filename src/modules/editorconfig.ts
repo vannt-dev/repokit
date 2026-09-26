@@ -32,6 +32,13 @@ export const editorconfigModule: Module = {
   enabled: (config) => config.modules.editorconfig,
   outputs: () => [
     { kind: "file", module: "editorconfig", path: ".editorconfig", content: EDITORCONFIG },
-    { kind: "block", module: "editorconfig", path: ".gitattributes", id: "editorconfig", comment: "hash", body: GITATTRIBUTES },
+    {
+      kind: "block",
+      module: "editorconfig",
+      path: ".gitattributes",
+      id: "editorconfig",
+      comment: "hash",
+      body: GITATTRIBUTES,
+    },
   ],
 };

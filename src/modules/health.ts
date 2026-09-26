@@ -66,7 +66,9 @@ export const healthModule: Module = {
       ),
     );
 
-    outputs.push(md("CODE_OF_CONDUCT.md", readTemplate("CODE_OF_CONDUCT.md").replace("[INSERT CONTACT METHOD]", health.contact)));
+    outputs.push(
+      md("CODE_OF_CONDUCT.md", readTemplate("CODE_OF_CONDUCT.md").replace("[INSERT CONTACT METHOD]", health.contact)),
+    );
     outputs.push(...ctx.platform.communityFiles(ctx));
     return outputs;
   },

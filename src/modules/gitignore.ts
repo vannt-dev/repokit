@@ -8,6 +8,15 @@ export const gitignoreModule: Module = {
     const names = [...new Set(ctx.stacks.flatMap((s) => s.gitignore))];
     const sections = names.map((n) => `## ${n} (github/gitignore)\n${readTemplate(`gitignore/${n}.gitignore`).trim()}`);
     sections.push("## repokit\n*.repokit-new");
-    return [{ kind: "block", module: "gitignore", path: ".gitignore", id: "gitignore", comment: "hash", body: sections.join("\n\n") }];
+    return [
+      {
+        kind: "block",
+        module: "gitignore",
+        path: ".gitignore",
+        id: "gitignore",
+        comment: "hash",
+        body: sections.join("\n\n"),
+      },
+    ];
   },
 };

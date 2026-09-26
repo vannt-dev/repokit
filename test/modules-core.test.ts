@@ -52,9 +52,18 @@ describe("hooks", () => {
     const config = parse(file.content);
     expect(config["pre-commit"]).toEqual({
       parallel: true,
-      jobs: [{ name: "node:prettier", glob: "*.{js,ts}", run: "npx prettier --write --ignore-unknown {staged_files}", stage_fixed: true }],
+      jobs: [
+        {
+          name: "node:prettier",
+          glob: "*.{js,ts}",
+          run: "npx prettier --write --ignore-unknown {staged_files}",
+          stage_fixed: true,
+        },
+      ],
     });
-    expect(config["commit-msg"]).toEqual({ jobs: [{ name: "commitlint", run: "npx --no-install commitlint --edit {1}" }] });
+    expect(config["commit-msg"]).toEqual({
+      jobs: [{ name: "commitlint", run: "npx --no-install commitlint --edit {1}" }],
+    });
     expect(config["pre-push"]).toEqual({ jobs: [{ name: "node:test", run: "npm test" }] });
     const json = outputs.find((o) => o.kind === "json") as JsonOutput;
     expect([json.keyPath.join("."), json.value]).toEqual(["devDependencies.lefthook", "^2.1.14"]);

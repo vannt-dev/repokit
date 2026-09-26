@@ -15,7 +15,10 @@ async function repoWith(files: Record<string, string>): Promise<string> {
 describe("node stack", () => {
   it("uses prettier and eslint when installed, with npm by default", async () => {
     const dir = await repoWith({
-      "package.json": JSON.stringify({ scripts: { test: "vitest run" }, devDependencies: { prettier: "3", eslint: "9" } }),
+      "package.json": JSON.stringify({
+        scripts: { test: "vitest run" },
+        devDependencies: { prettier: "3", eslint: "9" },
+      }),
     });
     const stack = await nodeStack.resolve(dir);
     expect(stack.staged.map((j) => j.name)).toEqual(["node:prettier", "node:eslint"]);
@@ -27,7 +30,10 @@ describe("node stack", () => {
 
   it("prefers biome and follows the pnpm lockfile", async () => {
     const dir = await repoWith({
-      "package.json": JSON.stringify({ scripts: { test: "vitest" }, devDependencies: { "@biomejs/biome": "2", prettier: "3" } }),
+      "package.json": JSON.stringify({
+        scripts: { test: "vitest" },
+        devDependencies: { "@biomejs/biome": "2", prettier: "3" },
+      }),
       "pnpm-lock.yaml": "",
     });
     const stack = await nodeStack.resolve(dir);

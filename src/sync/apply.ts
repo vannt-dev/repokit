@@ -43,13 +43,19 @@ async function remove(root: string, target: Target): Promise<void> {
   return put(path, formatJson(data, existing));
 }
 
-export async function applySync(root: string, result: SyncResult, previous: Lock | null, standard: string): Promise<Lock> {
+export async function applySync(
+  root: string,
+  result: SyncResult,
+  previous: Lock | null,
+  standard: string,
+): Promise<Lock> {
   const previousEntries = new Map((previous?.entries ?? []).map((e) => [e.id, e]));
   const entries: LockEntry[] = [];
   for (const { output, action } of result.decisions) {
     const id = outputId(output);
     if (action === "create" || action === "write" || action === "adopt") await write(root, output);
-    if (action === "conflict" && output.kind === "file") await put(join(root, `${output.path}.repokit-new`), output.content);
+    if (action === "conflict" && output.kind === "file")
+      await put(join(root, `${output.path}.repokit-new`), output.content);
     if (action === "conflict") {
       const kept = previousEntries.get(id);
       if (kept) entries.push(kept);
