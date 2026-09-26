@@ -1,33 +1,33 @@
-# repokit core Implementation Plan
+# repokeeper core Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Ship a working `repokit` CLI whose `init`, `check` and `update` apply and maintain the core standard (editorconfig, commits, hooks, community health files, gitignore, Dependabot) on Node repositories.
+**Goal:** Ship a working `repokeeper` CLI whose `init`, `check` and `update` apply and maintain the core standard (editorconfig, commits, hooks, community health files, gitignore, Dependabot) on Node repositories.
 
-**Architecture:** A pure planner turns `.repokit.yml`, resolved stack packs and the GitHub platform adapter into a list of desired outputs (whole files, marked blocks, JSON keys). A sync engine compares them with the working tree and `.repokit/lock.json`, decides per output (create, write, unchanged, conflict, unmanaged, adopt) and applies the change set. Commands are thin layers over planner + sync.
+**Architecture:** A pure planner turns `.repokeeper.yml`, resolved stack packs and the GitHub platform adapter into a list of desired outputs (whole files, marked blocks, JSON keys). A sync engine compares them with the working tree and `.repokeeper/lock.json`, decides per output (create, write, unchanged, conflict, unmanaged, adopt) and applies the change set. Commands are thin layers over planner + sync.
 
 **Tech Stack:** Node.js ≥ 22.12, TypeScript 7 (`tsc`), ESM (`"type": "module"`, NodeNext), Vitest 5, `yaml` 2.9, `ajv` 8.20, `node:util.parseArgs`.
 
-**Spec:** `docs/superpowers/specs/2026-09-25-repokit-design.md` — this plan implements delivery steps 1–2 (skeleton, core modules, node pack). Later plans: (2) reusable workflows + `ci` and `release` modules, (3) python, dart, script, java and dotnet packs plus NestJS awareness, (4) `repokit github apply`.
+**Spec:** `docs/superpowers/specs/2026-09-25-repokeeper-design.md` — this plan implements delivery steps 1–2 (skeleton, core modules, node pack). Later plans: (2) reusable workflows + `ci` and `release` modules, (3) python, dart, script, java and dotnet packs plus NestJS awareness, (4) `repokeeper github apply`.
 
 ## Global Constraints
 
-- Package name `@vannt-dev/repokit`; command `repokit`; `engines.node` `>=22.12.0`.
-- Config file `.repokit.yml`; lock file `.repokit/lock.json`; standard version `1.0.0`.
+- Package name `repokeeper`; command `repokeeper`; `engines.node` `>=22.12.0`.
+- Config file `.repokeeper.yml`; lock file `.repokeeper/lock.json`; standard version `1.0.0`.
 - Pinned tool versions for the standard: lefthook `2.1.14`, `@commitlint/cli` `21.2.3`, `@commitlint/config-conventional` `21.2.3`.
 - Exit codes: `0` success, `1` drift or conflicts, `2` config or usage error.
 - Never overwrite content the user edited; never write outside the repository root.
 - Paths in config, lock and output are POSIX (`/`) on every OS.
-- Every generated file starts with the managed header: `Managed by repokit (https://github.com/vannt-dev/repokit). Edits are reported by \`repokit check\`.` in the file's comment syntax (LICENSE and CODE_OF_CONDUCT excepted: their text is standard).
+- Every generated file starts with the managed header: `Managed by repokeeper (https://github.com/vannt-dev/repokeeper). Edits are reported by \`repokeeper check\`.` in the file's comment syntax (LICENSE and CODE_OF_CONDUCT excepted: their text is standard).
 - Commits follow Conventional Commits with no `Co-Authored-By` or other trailers.
 - Work happens on branch `feat/core`; `main` only receives it through a pull request.
 
 ## Review Focus
 
 - A `.gitignore` or `.gitattributes` without a trailing newline: the block must start on its own line, separated by a blank line, not glued to the last rule. → test in Task 3.
-- A `package.json` indented with four spaces or tabs, or with CRLF endings: repokit's key edits must keep that indentation, line ending and final newline. → test in Task 3.
-- A Windows checkout with `core.autocrlf=true` turns repokit's LF files into CRLF: `check` must still report them unchanged. → test in Task 8.
-- An empty `.repokit.yml`, or one with a typo in a key: a message naming the key and line, exit 2, no stack trace. → test in Task 2.
+- A `package.json` indented with four spaces or tabs, or with CRLF endings: repokeeper's key edits must keep that indentation, line ending and final newline. → test in Task 3.
+- A Windows checkout with `core.autocrlf=true` turns repokeeper's LF files into CRLF: `check` must still report them unchanged. → test in Task 8.
+- An empty `.repokeeper.yml`, or one with a typo in a key: a message naming the key and line, exit 2, no stack trace. → test in Task 2.
 - A directory that is not a git repository, or has no `origin` remote: `init` still works, skips the uncommitted-changes guard and omits CODEOWNERS. → test in Task 10.
 
 ---
@@ -39,13 +39,13 @@ package.json · tsconfig.json · tsconfig.build.json · vitest.config.ts · .git
 src/
   cli.ts              argument parsing, dispatch, exit codes
   version.ts          PACKAGE_VERSION, STANDARD_VERSION, TOOL_VERSIONS, compareVersions
-  errors.ts           RepokitError, ConfigError, UsageError, LockError
+  errors.ts           RepokeeperError, ConfigError, UsageError, LockError
   model.ts            Output types, outputId, ResolvedStack, ModuleContext, Module, PlatformAdapter, MANAGED_HEADER
   templates.ts        readTemplate()
   git.ts              isGitRepo, parseRemoteUrl, repoInfo, gitUserName, dirtyPaths
   plan.ts             planOutputs()
-  config/types.ts     RepokitConfig, STACK_IDS, defaultConfig()
-  config/schema.ts    JSON Schema for .repokit.yml
+  config/types.ts     RepokeeperConfig, STACK_IDS, defaultConfig()
+  config/schema.ts    JSON Schema for .repokeeper.yml
   config/load.ts      CONFIG_FILE, loadConfig, parseConfig, renderConfig, setStandard
   stacks/types.ts     StackPack
   stacks/node.ts      node pack
@@ -82,18 +82,18 @@ test/  helpers.ts and one test file per unit (paths given in each task)
 - [ ] **Step 1: Create the branch and project files**
 
 ```bash
-cd F:/ai-agent/repokit
+cd F:/ai-agent/repokeeper
 git switch -c feat/core
 ```
 
 `package.json`:
 ```json
 {
-  "name": "@vannt-dev/repokit",
+  "name": "repokeeper",
   "version": "0.1.0",
   "description": "Keep every repository on one maintained standard: commits, git hooks, CI, releases, dependency updates and repo settings.",
   "type": "module",
-  "bin": { "repokit": "dist/cli.js" },
+  "bin": { "repokeeper": "dist/cli.js" },
   "files": ["dist/", "templates/"],
   "engines": { "node": ">=22.12.0" },
   "scripts": {
@@ -103,9 +103,9 @@ git switch -c feat/core
   },
   "dependencies": { "ajv": "^8.20.0", "yaml": "^2.9.1" },
   "devDependencies": { "@types/node": "^22.20.4", "typescript": "^7.0.2", "vitest": "^5.0.2" },
-  "repository": { "type": "git", "url": "git+https://github.com/vannt-dev/repokit.git" },
-  "homepage": "https://github.com/vannt-dev/repokit#readme",
-  "bugs": { "url": "https://github.com/vannt-dev/repokit/issues" },
+  "repository": { "type": "git", "url": "git+https://github.com/vannt-dev/repokeeper.git" },
+  "homepage": "https://github.com/vannt-dev/repokeeper#readme",
+  "bugs": { "url": "https://github.com/vannt-dev/repokeeper/issues" },
   "keywords": ["repository", "standard", "conventional-commits", "lefthook", "github-actions", "dependabot"],
   "author": "vannt-dev",
   "license": "MIT"
@@ -171,7 +171,7 @@ export function capture(cwd: string = process.cwd()): { io: Io; out: string[]; e
 }
 
 export function tempDir(): Promise<string> {
-  return mkdtemp(join(tmpdir(), "repokit-"));
+  return mkdtemp(join(tmpdir(), "repokeeper-"));
 }
 ```
 
@@ -191,7 +191,7 @@ it("prints the package version", async () => {
 it("rejects an unknown command with exit code 2 and usage", async () => {
   const c = capture();
   expect(await run(["frobnicate"], c.io)).toBe(2);
-  expect(c.err.join("\n")).toContain("usage: repokit");
+  expect(c.err.join("\n")).toContain("usage: repokeeper");
 });
 
 it("rejects an unknown option with exit code 2", async () => {
@@ -222,7 +222,7 @@ export const PACKAGE_VERSION: string = (
   JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string }
 ).version;
 
-/** The standard this build of repokit applies. Bump it whenever generated output changes. */
+/** The standard this build of repokeeper applies. Bump it whenever generated output changes. */
 export const STANDARD_VERSION = "1.0.0";
 
 export const TOOL_VERSIONS = {
@@ -244,7 +244,7 @@ export function compareVersions(a: string, b: string): number {
 
 `src/errors.ts`:
 ```ts
-export class RepokitError extends Error {
+export class RepokeeperError extends Error {
   constructor(
     message: string,
     readonly exitCode: number,
@@ -254,22 +254,22 @@ export class RepokitError extends Error {
   }
 }
 
-/** `.repokit.yml` is missing or invalid. */
-export class ConfigError extends RepokitError {
+/** `.repokeeper.yml` is missing or invalid. */
+export class ConfigError extends RepokeeperError {
   constructor(message: string) {
     super(message, 2);
   }
 }
 
 /** The command cannot run as requested. */
-export class UsageError extends RepokitError {
+export class UsageError extends RepokeeperError {
   constructor(message: string) {
     super(message, 2);
   }
 }
 
-/** `.repokit/lock.json` is unreadable; the repository state is unknown, which counts as drift. */
-export class LockError extends RepokitError {
+/** `.repokeeper/lock.json` is unreadable; the repository state is unknown, which counts as drift. */
+export class LockError extends RepokeeperError {
   constructor(message: string) {
     super(message, 1);
   }
@@ -282,7 +282,7 @@ export class LockError extends RepokitError {
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
-import { RepokitError, UsageError } from "./errors.js";
+import { RepokeeperError, UsageError } from "./errors.js";
 import { PACKAGE_VERSION } from "./version.js";
 
 export interface Io {
@@ -292,20 +292,20 @@ export interface Io {
 }
 
 export const USAGE = [
-  "usage: repokit <command> [options]",
+  "usage: repokeeper <command> [options]",
   "",
   "commands:",
-  "  init    detect stacks, write .repokit.yml and apply the standard",
+  "  init    detect stacks, write .repokeeper.yml and apply the standard",
   "  check   report drift from the standard without writing (exit 1 on drift)",
-  "  update  move to the standard of this repokit version and resync",
+  "  update  move to the standard of this repokeeper version and resync",
   "",
   "options:",
   "  --dry-run        show what would change without writing",
   "  --force          write even when target files have uncommitted changes",
-  "  --adopt <path>   let repokit manage an existing file (repeatable); --adopt-all for every file",
-  "  --accept <path>  take repokit's version of a locally edited file (update, repeatable)",
+  "  --adopt <path>   let repokeeper manage an existing file (repeatable); --adopt-all for every file",
+  "  --accept <path>  take repokeeper's version of a locally edited file (update, repeatable)",
   "  --stack <id>     stack to use instead of detection (init, repeatable)",
-  "  --relock         rebuild .repokit/lock.json from the current files (init)",
+  "  --relock         rebuild .repokeeper/lock.json from the current files (init)",
   "  --json           machine-readable output (check)",
   "  -v, --version    print the version",
 ].join("\n");
@@ -340,13 +340,13 @@ export async function run(argv: string[], io: Io): Promise<number> {
     }
     throw new UsageError(`unknown command: ${command}`);
   } catch (error) {
-    if (error instanceof RepokitError) {
-      io.err(`repokit: ${error.message}`);
+    if (error instanceof RepokeeperError) {
+      io.err(`repokeeper: ${error.message}`);
       if (error instanceof UsageError) io.err(USAGE);
       return error.exitCode;
     }
     if (error instanceof TypeError && "code" in error && String(error.code).startsWith("ERR_PARSE_ARGS")) {
-      io.err(`repokit: ${error.message}`);
+      io.err(`repokeeper: ${error.message}`);
       io.err(USAGE);
       return 2;
     }
@@ -391,9 +391,9 @@ git commit -m "feat(cli): add the project skeleton and version command"
   - `STACK_IDS = ["node","python","dart","script","java","dotnet"] as const`; `type StackId`
   - `interface HealthConfig { license: string | false; copyright: string; contact: string; codeowners: string[] }`
   - `interface ModulesConfig { editorconfig: boolean; commits: boolean; hooks: boolean; ci: boolean; release: boolean; deps: boolean; gitignore: boolean; health: HealthConfig | false }`
-  - `interface RepokitConfig { schema: 1; standard: string; platform: "github"; stacks: StackId[]; modules: ModulesConfig; owned: string[]; stack_options: Record<string, Record<string, unknown>>; github?: Record<string, unknown> }`
-  - `defaultConfig(input: { stacks: StackId[]; standard: string; copyright: string; contact: string; codeowners: string[] }): RepokitConfig`
-  - `CONFIG_FILE = ".repokit.yml"`; `loadConfig(root): Promise<RepokitConfig>`; `parseConfig(text): RepokitConfig`; `renderConfig(config): string`; `setStandard(text, version): string`
+  - `interface RepokeeperConfig { schema: 1; standard: string; platform: "github"; stacks: StackId[]; modules: ModulesConfig; owned: string[]; stack_options: Record<string, Record<string, unknown>>; github?: Record<string, unknown> }`
+  - `defaultConfig(input: { stacks: StackId[]; standard: string; copyright: string; contact: string; codeowners: string[] }): RepokeeperConfig`
+  - `CONFIG_FILE = ".repokeeper.yml"`; `loadConfig(root): Promise<RepokeeperConfig>`; `parseConfig(text): RepokeeperConfig`; `renderConfig(config): string`; `setStandard(text, version): string`
 
 - [ ] **Step 1: Write the failing test**
 
@@ -439,21 +439,21 @@ describe("parseConfig", () => {
   });
 
   it("explains an empty file", () => {
-    expect(errorOf("")).toMatch(/^\.repokit\.yml:1: \(root\) must have required property 'schema'/);
+    expect(errorOf("")).toMatch(/^\.repokeeper\.yml:1: \(root\) must have required property 'schema'/);
   });
 
   it("names the line and key of an unknown key", () => {
     const text = "schema: 1\nstandard: 1.0.0\nplatform: github\nstacks: [node]\nmodules:\n  health: false\n  hoks: true\n";
-    expect(errorOf(text)).toBe(".repokit.yml:7: modules.hoks is not a known key");
+    expect(errorOf(text)).toBe(".repokeeper.yml:7: modules.hoks is not a known key");
   });
 
   it("lists the allowed values of an enum", () => {
     const text = "schema: 1\nstandard: 1.0.0\nplatform: github\nstacks: [ruby]\nmodules:\n  health: false\n";
-    expect(errorOf(text)).toBe(".repokit.yml:4: stacks.0 must be one of: node, python, dart, script, java, dotnet");
+    expect(errorOf(text)).toBe(".repokeeper.yml:4: stacks.0 must be one of: node, python, dart, script, java, dotnet");
   });
 
   it("reports YAML syntax errors with their line", () => {
-    expect(errorOf("schema: 1\nstacks: [node\n")).toMatch(/^\.repokit\.yml:\d+: /);
+    expect(errorOf("schema: 1\nstacks: [node\n")).toMatch(/^\.repokeeper\.yml:\d+: /);
   });
 
   it("requires modules.health", () => {
@@ -504,7 +504,7 @@ export interface ModulesConfig {
   health: HealthConfig | false;
 }
 
-export interface RepokitConfig {
+export interface RepokeeperConfig {
   schema: 1;
   standard: string;
   platform: "github";
@@ -521,7 +521,7 @@ export function defaultConfig(input: {
   copyright: string;
   contact: string;
   codeowners: string[];
-}): RepokitConfig {
+}): RepokeeperConfig {
   return {
     schema: 1,
     standard: input.standard,
@@ -602,23 +602,23 @@ import { Ajv, type ErrorObject } from "ajv";
 import { type Document, LineCounter, isNode, parseDocument, stringify } from "yaml";
 import { ConfigError } from "../errors.js";
 import { configSchema } from "./schema.js";
-import type { ModulesConfig, RepokitConfig } from "./types.js";
+import type { ModulesConfig, RepokeeperConfig } from "./types.js";
 
-export const CONFIG_FILE = ".repokit.yml";
+export const CONFIG_FILE = ".repokeeper.yml";
 
 const validate = new Ajv({ allErrors: false }).compile(configSchema);
 
-export async function loadConfig(root: string): Promise<RepokitConfig> {
+export async function loadConfig(root: string): Promise<RepokeeperConfig> {
   let text: string;
   try {
     text = await readFile(join(root, CONFIG_FILE), "utf8");
   } catch {
-    throw new ConfigError(`${CONFIG_FILE} not found; run \`repokit init\` first`);
+    throw new ConfigError(`${CONFIG_FILE} not found; run \`repokeeper init\` first`);
   }
   return parseConfig(text);
 }
 
-export function parseConfig(text: string): RepokitConfig {
+export function parseConfig(text: string): RepokeeperConfig {
   const lineCounter = new LineCounter();
   const doc = parseDocument(text, { lineCounter });
   const syntax = doc.errors[0];
@@ -632,11 +632,11 @@ export function parseConfig(text: string): RepokitConfig {
     const path = pathOf(error);
     throw new ConfigError(`${CONFIG_FILE}:${lineOf(doc, lineCounter, path)}: ${describe(error, path)}`);
   }
-  return withDefaults(data as Partial<RepokitConfig> & Pick<RepokitConfig, "schema" | "standard" | "platform" | "stacks">);
+  return withDefaults(data as Partial<RepokeeperConfig> & Pick<RepokeeperConfig, "schema" | "standard" | "platform" | "stacks">);
 }
 
-export function renderConfig(config: RepokitConfig): string {
-  return `# repokit configuration: https://github.com/vannt-dev/repokit\n${stringify(config)}`;
+export function renderConfig(config: RepokeeperConfig): string {
+  return `# repokeeper configuration: https://github.com/vannt-dev/repokeeper\n${stringify(config)}`;
 }
 
 /** Rewrites `standard:` in place, keeping every comment and the rest of the layout. */
@@ -647,15 +647,15 @@ export function setStandard(text: string, version: string): string {
 }
 
 function withDefaults(
-  data: Partial<RepokitConfig> & Pick<RepokitConfig, "schema" | "standard" | "platform" | "stacks">,
-): RepokitConfig {
+  data: Partial<RepokeeperConfig> & Pick<RepokeeperConfig, "schema" | "standard" | "platform" | "stacks">,
+): RepokeeperConfig {
   const modules = (data.modules ?? {}) as Partial<ModulesConfig>;
   if (modules.health === undefined) {
     throw new ConfigError(
       `${CONFIG_FILE}: modules.health is required; set it to false to leave community health files alone`,
     );
   }
-  const config: RepokitConfig = {
+  const config: RepokeeperConfig = {
     schema: data.schema,
     standard: data.standard,
     platform: data.platform,
@@ -717,7 +717,7 @@ Expected: 8 tests PASS; typecheck clean. If the unknown-key line is reported as 
 
 ```bash
 git add src/config test/config.test.ts
-git commit -m "feat(config): load and validate .repokit.yml with line-level errors"
+git commit -m "feat(config): load and validate .repokeeper.yml with line-level errors"
 ```
 
 ---
@@ -749,8 +749,8 @@ describe("hashText", () => {
 });
 
 describe("blocks", () => {
-  const start = "# repokit:start gitignore";
-  const end = "# repokit:end gitignore";
+  const start = "# repokeeper:start gitignore";
+  const end = "# repokeeper:end gitignore";
 
   it("creates a file holding only the block", () => {
     expect(upsertBlock(null, "gitignore", "dist/", "hash")).toBe(`${start}\ndist/\n${end}\n`);
@@ -775,7 +775,7 @@ describe("blocks", () => {
   });
 
   it("uses HTML comments for markdown", () => {
-    expect(upsertBlock(null, "x", "body", "html")).toBe("<!-- repokit:start x -->\nbody\n<!-- repokit:end x -->\n");
+    expect(upsertBlock(null, "x", "body", "html")).toBe("<!-- repokeeper:start x -->\nbody\n<!-- repokeeper:end x -->\n");
   });
 
   it("removes the block and the blank line before it", () => {
@@ -842,11 +842,11 @@ function comment(style: CommentStyle, text: string): string {
 }
 
 export function startMarker(id: string, style: CommentStyle): string {
-  return comment(style, `repokit:start ${id}`);
+  return comment(style, `repokeeper:start ${id}`);
 }
 
 export function endMarker(id: string, style: CommentStyle): string {
-  return comment(style, `repokit:end ${id}`);
+  return comment(style, `repokeeper:end ${id}`);
 }
 
 function eolOf(text: string): string {
@@ -951,15 +951,15 @@ git commit -m "feat(sync): add hashing, marked blocks and JSON key editing"
 - Create: `src/model.ts`, `src/git.ts`, `src/stacks/types.ts`, `src/stacks/node.ts`, `src/stacks/index.ts`, `test/git.test.ts`, `test/stacks.test.ts`
 
 **Interfaces:**
-- Consumes: `RepokitConfig`, `StackId` (Task 2); `CommentStyle` (Task 3); `UsageError` (Task 1).
+- Consumes: `RepokeeperConfig`, `StackId` (Task 2); `CommentStyle` (Task 3); `UsageError` (Task 1).
 - Produces:
   - `MANAGED_HEADER` string
   - `type Output = FileOutput | BlockOutput | JsonOutput` with `FileOutput { kind: "file"; path; content; module }`, `BlockOutput { kind: "block"; path; id; body; comment: CommentStyle; module }`, `JsonOutput { kind: "json"; path; keyPath: string[]; value: unknown; module }`; `outputId(o): string`; `describeOutput(o): string`
   - `interface StagedJob { name: string; glob: string; run: string }`
   - `interface ResolvedStack { id: StackId; staged: StagedJob[]; test: string | null; install: string | null; gitignore: string[]; dependabot: string[] }`
   - `interface RepoInfo { owner: string | null; name: string }`
-  - `interface ModuleContext { config: RepokitConfig; stacks: ResolvedStack[]; platform: PlatformAdapter; repo: RepoInfo }`
-  - `interface Module { id: string; enabled(config: RepokitConfig): boolean; outputs(ctx: ModuleContext): Output[] }`
+  - `interface ModuleContext { config: RepokeeperConfig; stacks: ResolvedStack[]; platform: PlatformAdapter; repo: RepoInfo }`
+  - `interface Module { id: string; enabled(config: RepokeeperConfig): boolean; outputs(ctx: ModuleContext): Output[] }`
   - `interface PlatformAdapter { id: "github"; communityFiles(ctx: ModuleContext): Output[]; dependencyUpdates(ecosystems: string[]): Output[] }`
   - `interface StackPack { id: StackId; detect: string[]; resolve(root: string): Promise<ResolvedStack> }`; `nodeStack`; `getStackPack(id): StackPack`; `detectStacks(root): Promise<StackId[]>`
   - `isGitRepo(root)`, `parseRemoteUrl(url)`, `repoInfo(root)`, `gitUserName(root)`, `dirtyPaths(root, paths)`
@@ -976,8 +976,8 @@ import { dirtyPaths, isGitRepo, parseRemoteUrl, repoInfo } from "../src/git.js";
 import { tempDir } from "./helpers.js";
 
 it("parses GitHub remotes in HTTPS and SSH form", () => {
-  expect(parseRemoteUrl("https://github.com/vannt-dev/repokit.git")).toEqual({ owner: "vannt-dev", name: "repokit" });
-  expect(parseRemoteUrl("git@github.com:vannt-dev/repokit.git\n")).toEqual({ owner: "vannt-dev", name: "repokit" });
+  expect(parseRemoteUrl("https://github.com/vannt-dev/repokeeper.git")).toEqual({ owner: "vannt-dev", name: "repokeeper" });
+  expect(parseRemoteUrl("git@github.com:vannt-dev/repokeeper.git\n")).toEqual({ owner: "vannt-dev", name: "repokeeper" });
   expect(parseRemoteUrl("https://gitlab.com/a/b.git")).toBeNull();
 });
 
@@ -1074,11 +1074,11 @@ Expected: FAIL — cannot resolve `../src/git.js`.
 
 `src/model.ts`:
 ```ts
-import type { RepokitConfig, StackId } from "./config/types.js";
+import type { RepokeeperConfig, StackId } from "./config/types.js";
 import type { CommentStyle } from "./sync/block.js";
 
 export const MANAGED_HEADER =
-  "Managed by repokit (https://github.com/vannt-dev/repokit). Edits are reported by `repokit check`.";
+  "Managed by repokeeper (https://github.com/vannt-dev/repokeeper). Edits are reported by `repokeeper check`.";
 
 export interface FileOutput { kind: "file"; path: string; content: string; module: string }
 export interface BlockOutput { kind: "block"; path: string; id: string; body: string; comment: CommentStyle; module: string }
@@ -1122,7 +1122,7 @@ export interface PlatformAdapter {
 }
 
 export interface ModuleContext {
-  config: RepokitConfig;
+  config: RepokeeperConfig;
   stacks: ResolvedStack[];
   platform: PlatformAdapter;
   repo: RepoInfo;
@@ -1130,7 +1130,7 @@ export interface ModuleContext {
 
 export interface Module {
   id: string;
-  enabled(config: RepokitConfig): boolean;
+  enabled(config: RepokeeperConfig): boolean;
   outputs(ctx: ModuleContext): Output[];
 }
 ```
@@ -1277,7 +1277,7 @@ const PACKS: Partial<Record<StackId, StackPack>> = { node: nodeStack };
 
 export function getStackPack(id: StackId): StackPack {
   const pack = PACKS[id];
-  if (!pack) throw new UsageError(`the ${id} stack is not available in this version of repokit`);
+  if (!pack) throw new UsageError(`the ${id} stack is not available in this version of repokeeper`);
   return pack;
 }
 
@@ -1324,7 +1324,7 @@ Expected: the file starts with `# Contributor Covenant Code of Conduct` and the 
 
 Append to `test/helpers.ts`:
 ```ts
-import { defaultConfig, type ModulesConfig, type RepokitConfig } from "../src/config/types.js";
+import { defaultConfig, type ModulesConfig, type RepokeeperConfig } from "../src/config/types.js";
 import type { ModuleContext, RepoInfo, ResolvedStack } from "../src/model.js";
 import { githubPlatform } from "../src/platforms/github.js";
 
@@ -1341,7 +1341,7 @@ export function nodeResolved(overrides: Partial<ResolvedStack> = {}): ResolvedSt
 }
 
 export function makeContext(
-  overrides: { config?: Partial<RepokitConfig>; modules?: Partial<ModulesConfig>; stacks?: ResolvedStack[]; repo?: RepoInfo } = {},
+  overrides: { config?: Partial<RepokeeperConfig>; modules?: Partial<ModulesConfig>; stacks?: ResolvedStack[]; repo?: RepoInfo } = {},
 ): ModuleContext {
   const base = defaultConfig({
     stacks: ["node"],
@@ -1350,7 +1350,7 @@ export function makeContext(
     contact: "https://github.com/vannt-dev",
     codeowners: ["@vannt-dev"],
   });
-  const config: RepokitConfig = { ...base, ...overrides.config, modules: { ...base.modules, ...overrides.modules } };
+  const config: RepokeeperConfig = { ...base, ...overrides.config, modules: { ...base.modules, ...overrides.modules } };
   return {
     config,
     stacks: overrides.stacks ?? [nodeResolved()],
@@ -1577,7 +1577,7 @@ export const healthModule: Module = {
     if (health.license !== false) {
       if (health.license !== "MIT") {
         throw new UsageError(
-          `license ${health.license} is not bundled with this version of repokit; use MIT, or set modules.health.license to false`,
+          `license ${health.license} is not bundled with this version of repokeeper; use MIT, or set modules.health.license to false`,
         );
       }
       outputs.push(md("LICENSE", MIT(health.copyright)));
@@ -1680,12 +1680,12 @@ describe("editorconfig", () => {
 });
 
 describe("gitignore", () => {
-  it("adds the stack templates and ignores repokit's conflict files", () => {
+  it("adds the stack templates and ignores repokeeper's conflict files", () => {
     const [block] = gitignoreModule.outputs(makeContext()) as [BlockOutput];
     expect(block).toMatchObject({ kind: "block", path: ".gitignore", id: "gitignore" });
     expect(block.body).toContain("## Node (github/gitignore)");
     expect(block.body).toContain("node_modules/");
-    expect(block.body.endsWith("*.repokit-new")).toBe(true);
+    expect(block.body.endsWith("*.repokeeper-new")).toBe(true);
   });
 });
 
@@ -1787,7 +1787,7 @@ export const gitignoreModule: Module = {
   outputs(ctx) {
     const names = [...new Set(ctx.stacks.flatMap((s) => s.gitignore))];
     const sections = names.map((n) => `## ${n} (github/gitignore)\n${readTemplate(`gitignore/${n}.gitignore`).trim()}`);
-    sections.push("## repokit\n*.repokit-new");
+    sections.push("## repokeeper\n*.repokeeper-new");
     return [{ kind: "block", module: "gitignore", path: ".gitignore", id: "gitignore", comment: "hash", body: sections.join("\n\n") }];
   },
 };
@@ -2010,7 +2010,7 @@ git commit -m "feat(plan): combine enabled modules into one deterministic output
 **Interfaces:**
 - Consumes: `Output`, `outputId` (Task 4); block/json/hash helpers (Task 3); `LockError`, `UsageError` (Task 1).
 - Produces:
-  - `LOCK_FILE = ".repokit/lock.json"`
+  - `LOCK_FILE = ".repokeeper/lock.json"`
   - `type Target = { kind: "file"; path: string } | { kind: "block"; path: string; id: string; comment: CommentStyle } | { kind: "json"; path: string; keyPath: string[] }`; `targetOf(output): Target`
   - `interface LockEntry { id: string; module: string; hash: string; target: Target }`; `interface Lock { lockVersion: 1; standard: string; entries: LockEntry[] }`; `readLock(root): Promise<Lock | null>`; `writeLock(root, lock): Promise<void>`
   - `desiredText(output): string`; `readCurrent(root, target): Promise<string | null>`
@@ -2040,7 +2040,7 @@ describe("decide", () => {
   it("leaves matching content alone", () => expect(decide(file, "new\n", entry("old\n"), false)).toBe("unchanged"));
   it("treats a CRLF checkout of the same content as unchanged", () =>
     expect(decide(file, "new\r\n", entry("new\n"), false)).toBe("unchanged"));
-  it("writes over content repokit wrote earlier", () => expect(decide(file, "old\n", entry("old\n"), false)).toBe("write"));
+  it("writes over content repokeeper wrote earlier", () => expect(decide(file, "old\n", entry("old\n"), false)).toBe("write"));
   it("flags content the user edited", () => expect(decide(file, "mine\n", entry("old\n"), false)).toBe("conflict"));
   it("does not take over an existing file", () => expect(decide(file, "mine\n", undefined, false)).toBe("unmanaged"));
   it("takes over an existing file when adopted", () => expect(decide(file, "mine\n", undefined, true)).toBe("adopt"));
@@ -2056,7 +2056,7 @@ describe("state", () => {
   it("reads files, blocks and JSON keys as comparable text", async () => {
     const root = await tempDir();
     await writeFile(join(root, "a.txt"), "hello\n");
-    await writeFile(join(root, ".gitignore"), "x\n\n# repokit:start g\ndist/\n# repokit:end g\n");
+    await writeFile(join(root, ".gitignore"), "x\n\n# repokeeper:start g\ndist/\n# repokeeper:end g\n");
     await writeFile(join(root, "package.json"), '{ "devDependencies": { "lefthook": "^2.1.14" } }');
     expect(await readCurrent(root, { kind: "file", path: "a.txt" })).toBe("hello\n");
     expect(await readCurrent(root, { kind: "file", path: "missing.txt" })).toBeNull();
@@ -2080,10 +2080,10 @@ describe("lock", () => {
 
   it("rejects a corrupt lock with a hint", async () => {
     const root = await tempDir();
-    await mkdir(join(root, ".repokit"));
+    await mkdir(join(root, ".repokeeper"));
     await writeFile(join(root, LOCK_FILE), "{ nope");
     await expect(readLock(root)).rejects.toThrow(LockError);
-    await expect(readLock(root)).rejects.toThrow("repokit init --relock");
+    await expect(readLock(root)).rejects.toThrow("repokeeper init --relock");
   });
 });
 ```
@@ -2103,7 +2103,7 @@ import { LockError } from "../errors.js";
 import type { Output } from "../model.js";
 import type { CommentStyle } from "./block.js";
 
-export const LOCK_FILE = ".repokit/lock.json";
+export const LOCK_FILE = ".repokeeper/lock.json";
 
 export type Target =
   | { kind: "file"; path: string }
@@ -2119,7 +2119,7 @@ export function targetOf(output: Output): Target {
 export interface LockEntry {
   id: string;
   module: string;
-  /** Hash of the content repokit last wrote (see desiredText). */
+  /** Hash of the content repokeeper last wrote (see desiredText). */
   hash: string;
   target: Target;
 }
@@ -2143,7 +2143,7 @@ export async function readLock(root: string): Promise<Lock | null> {
     if (data.lockVersion !== 1 || !Array.isArray(data.entries)) throw new Error("unexpected format");
     return data;
   } catch (error) {
-    throw new LockError(`${LOCK_FILE} is unreadable (${(error as Error).message}); run \`repokit init --relock\``);
+    throw new LockError(`${LOCK_FILE} is unreadable (${(error as Error).message}); run \`repokeeper init --relock\``);
   }
 }
 
@@ -2164,7 +2164,7 @@ import { readBlock } from "./block.js";
 import { getAtPath } from "./json.js";
 import type { Target } from "./lock.js";
 
-/** The text repokit compares and hashes for an output. */
+/** The text repokeeper compares and hashes for an output. */
 export function desiredText(output: Output): string {
   if (output.kind === "file") return output.content;
   if (output.kind === "block") return output.body;
@@ -2290,7 +2290,7 @@ describe("sync", () => {
     const result = await syncTo(root, v1);
     expect(actions(result)).toEqual({ "nested/dir/a.txt": "create", ".gitignore": "create", "package.json": "create" });
     expect(await readFile(join(root, ".gitignore"), "utf8")).toBe(
-      "node_modules/\n\n# repokit:start b\ndist/\n# repokit:end b\n",
+      "node_modules/\n\n# repokeeper:start b\ndist/\n# repokeeper:end b\n",
     );
     expect(await readFile(join(root, "package.json"), "utf8")).toBe(
       '{\r\n    "name": "x",\r\n    "devDependencies": {\r\n        "lefthook": "^2.1.14"\r\n    }\r\n}\r\n',
@@ -2307,7 +2307,7 @@ describe("sync", () => {
     const result = await syncTo(root, v2);
     expect(actions(result)).toEqual({ "nested/dir/a.txt": "conflict", ".gitignore": "write", "package.json": "unchanged" });
     expect(await readFile(join(root, "nested/dir/a.txt"), "utf8")).toBe("mine\n");
-    expect(await readFile(join(root, "nested/dir/a.txt.repokit-new"), "utf8")).toBe("a2\n");
+    expect(await readFile(join(root, "nested/dir/a.txt.repokeeper-new"), "utf8")).toBe("a2\n");
     // The conflict keeps its old lock entry, so it is still reported next time.
     const again = await computeSync(root, v2, await readLock(root), none);
     expect(actions(again)["nested/dir/a.txt"]).toBe("conflict");
@@ -2453,7 +2453,7 @@ export async function applySync(root: string, result: SyncResult, previous: Lock
   for (const { output, action } of result.decisions) {
     const id = outputId(output);
     if (action === "create" || action === "write" || action === "adopt") await write(root, output);
-    if (action === "conflict" && output.kind === "file") await put(join(root, `${output.path}.repokit-new`), output.content);
+    if (action === "conflict" && output.kind === "file") await put(join(root, `${output.path}.repokeeper-new`), output.content);
     if (action === "conflict") {
       const kept = previousEntries.get(id);
       if (kept) entries.push(kept);
@@ -2531,7 +2531,7 @@ async function nodeRepo(withGit = true): Promise<string> {
   return dir;
 }
 
-async function repokit(dir: string, ...args: string[]) {
+async function repokeeper(dir: string, ...args: string[]) {
   const c = capture(dir);
   const code = await run(args, c.io);
   return { code, out: c.out.join("\n"), err: c.err.join("\n") };
@@ -2542,12 +2542,12 @@ const commitAll = (dir: string) => {
   sh(dir, "commit", "-qm", "chore: sync");
 };
 
-describe("repokit end to end", () => {
+describe("repokeeper end to end", () => {
   it("initialises, checks clean, detects an edit and resolves it", async () => {
     const dir = await nodeRepo();
-    const init = await repokit(dir, "init");
+    const init = await repokeeper(dir, "init");
     expect(init.code).toBe(0);
-    const config = parse(await readFile(join(dir, ".repokit.yml"), "utf8"));
+    const config = parse(await readFile(join(dir, ".repokeeper.yml"), "utf8"));
     expect(config.stacks).toEqual(["node"]);
     expect(config.modules.health.codeowners).toEqual(["@demo-owner"]);
     expect(config.modules.health.copyright).toMatch(/^\d{4} Demo User$/);
@@ -2555,44 +2555,44 @@ describe("repokit end to end", () => {
     expect(JSON.parse(await readFile(join(dir, "package.json"), "utf8")).devDependencies.lefthook).toBe("^2.1.14");
     commitAll(dir);
 
-    expect((await repokit(dir, "check")).code).toBe(0);
+    expect((await repokeeper(dir, "check")).code).toBe(0);
 
     await appendFile(join(dir, "lefthook.yml"), "# local tweak\n");
-    const drift = await repokit(dir, "check");
+    const drift = await repokeeper(dir, "check");
     expect(drift.code).toBe(1);
     expect(drift.out).toContain("conflict");
     expect(drift.out).toContain("lefthook.yml");
 
-    const guarded = await repokit(dir, "update", "--accept", "lefthook.yml");
+    const guarded = await repokeeper(dir, "update", "--accept", "lefthook.yml");
     expect(guarded.code).toBe(2);
     expect(guarded.err).toContain("uncommitted changes in lefthook.yml");
 
-    const accepted = await repokit(dir, "update", "--accept", "lefthook.yml", "--force");
+    const accepted = await repokeeper(dir, "update", "--accept", "lefthook.yml", "--force");
     expect(accepted.code).toBe(0);
     expect(await readFile(join(dir, "lefthook.yml"), "utf8")).not.toContain("local tweak");
-    expect((await repokit(dir, "check")).code).toBe(0);
+    expect((await repokeeper(dir, "check")).code).toBe(0);
   });
 
   it("keeps a user-edited file on update and writes the new version beside it", async () => {
     const dir = await nodeRepo();
-    await repokit(dir, "init");
+    await repokeeper(dir, "init");
     commitAll(dir);
-    const lockPath = join(dir, ".repokit/lock.json");
+    const lockPath = join(dir, ".repokeeper/lock.json");
     const lock = JSON.parse(await readFile(lockPath, "utf8"));
-    // Pretend repokit last wrote different content, then the user edited the file.
+    // Pretend repokeeper last wrote different content, then the user edited the file.
     for (const entry of lock.entries) if (entry.id === "file:lefthook.yml") entry.hash = "0".repeat(64);
     await writeFile(lockPath, `${JSON.stringify(lock, null, 2)}\n`);
     await appendFile(join(dir, "lefthook.yml"), "# mine\n");
     commitAll(dir);
-    const update = await repokit(dir, "update");
+    const update = await repokeeper(dir, "update");
     expect(update.code).toBe(1);
     expect(await readFile(join(dir, "lefthook.yml"), "utf8")).toContain("# mine");
-    expect(existsSync(join(dir, "lefthook.yml.repokit-new"))).toBe(true);
+    expect(existsSync(join(dir, "lefthook.yml.repokeeper-new"))).toBe(true);
   });
 
   it("works outside git and without a remote", async () => {
     const dir = await nodeRepo(false);
-    const init = await repokit(dir, "init");
+    const init = await repokeeper(dir, "init");
     expect(init.code).toBe(0);
     expect(existsSync(join(dir, ".github/CODEOWNERS"))).toBe(false);
     expect(existsSync(join(dir, "SECURITY.md"))).toBe(true);
@@ -2602,7 +2602,7 @@ describe("repokit end to end", () => {
     const dir = await nodeRepo();
     await writeFile(join(dir, "LICENSE"), "All rights reserved.\n");
     commitAll(dir);
-    const init = await repokit(dir, "init");
+    const init = await repokeeper(dir, "init");
     expect(init.code).toBe(0);
     expect(init.out).toContain("unmanaged");
     expect(await readFile(join(dir, "LICENSE"), "utf8")).toBe("All rights reserved.\n");
@@ -2610,23 +2610,23 @@ describe("repokit end to end", () => {
 
   it("refuses to init twice, reports a missing config and a corrupt lock", async () => {
     const dir = await nodeRepo();
-    await repokit(dir, "init");
-    expect((await repokit(dir, "init")).code).toBe(2);
-    await writeFile(join(dir, ".repokit/lock.json"), "garbage");
-    const check = await repokit(dir, "check");
+    await repokeeper(dir, "init");
+    expect((await repokeeper(dir, "init")).code).toBe(2);
+    await writeFile(join(dir, ".repokeeper/lock.json"), "garbage");
+    const check = await repokeeper(dir, "check");
     expect(check.code).toBe(1);
-    expect(check.err).toContain("repokit init --relock");
-    expect((await repokit(dir, "init", "--relock")).code).toBe(0);
-    expect((await repokit(dir, "check")).code).toBe(0);
-    expect((await repokit(await tempDir(), "check")).code).toBe(2);
+    expect(check.err).toContain("repokeeper init --relock");
+    expect((await repokeeper(dir, "init", "--relock")).code).toBe(0);
+    expect((await repokeeper(dir, "check")).code).toBe(0);
+    expect((await repokeeper(await tempDir(), "check")).code).toBe(2);
   });
 
   it("changes nothing on a dry run and prints JSON for check", async () => {
     const dir = await nodeRepo();
-    expect((await repokit(dir, "init", "--dry-run")).code).toBe(0);
-    expect(existsSync(join(dir, ".repokit.yml"))).toBe(false);
-    await repokit(dir, "init");
-    const json = await repokit(dir, "check", "--json");
+    expect((await repokeeper(dir, "init", "--dry-run")).code).toBe(0);
+    expect(existsSync(join(dir, ".repokeeper.yml"))).toBe(false);
+    await repokeeper(dir, "init");
+    const json = await repokeeper(dir, "check", "--json");
     expect(JSON.parse(json.out)).toMatchObject({ clean: true, standard: { config: "1.0.0", current: "1.0.0" } });
   });
 });
@@ -2641,13 +2641,13 @@ Expected: FAIL — `init` is reported as an unknown command (exit 2 instead of 0
 
 `src/commands/context.ts`:
 ```ts
-import type { RepokitConfig } from "../config/types.js";
+import type { RepokeeperConfig } from "../config/types.js";
 import { repoInfo } from "../git.js";
 import type { ModuleContext, RepoInfo } from "../model.js";
 import { githubPlatform } from "../platforms/github.js";
 import { getStackPack } from "../stacks/index.js";
 
-export async function buildContext(root: string, config: RepokitConfig, repo?: RepoInfo): Promise<ModuleContext> {
+export async function buildContext(root: string, config: RepokeeperConfig, repo?: RepoInfo): Promise<ModuleContext> {
   const stacks = await Promise.all(config.stacks.map((id) => getStackPack(id).resolve(root)));
   return { config, stacks, platform: githubPlatform, repo: repo ?? (await repoInfo(root)) };
 }
@@ -2671,8 +2671,8 @@ export interface CommandOptions {
 }
 
 const HINTS: Record<string, (path: string) => string> = {
-  conflict: (p) => `edited locally; take repokit's version with --accept ${p}, or add it to owned in .repokit.yml`,
-  unmanaged: (p) => `exists and is not managed; let repokit manage it with --adopt ${p}, or add it to owned`,
+  conflict: (p) => `edited locally; take repokeeper's version with --accept ${p}, or add it to owned in .repokeeper.yml`,
+  unmanaged: (p) => `exists and is not managed; let repokeeper manage it with --adopt ${p}, or add it to owned`,
 };
 
 export function printResult(io: Io, result: SyncResult): void {
@@ -2731,7 +2731,7 @@ export async function guardUncommitted(root: string, result: SyncResult, force: 
 export async function initCommand(root: string, options: CommandOptions, io: Io): Promise<number> {
   if (options.relock) return relock(root, options, io);
   if (existsSync(join(root, CONFIG_FILE))) {
-    throw new UsageError(`${CONFIG_FILE} already exists; run \`repokit update\` or \`repokit check\``);
+    throw new UsageError(`${CONFIG_FILE} already exists; run \`repokeeper update\` or \`repokeeper check\``);
   }
   const stacks = options.stacks.length > 0 ? options.stacks : await detectStacks(root);
   if (stacks.length === 0) throw new UsageError("no supported stack detected; pass --stack node");
@@ -2757,11 +2757,11 @@ export async function initCommand(root: string, options: CommandOptions, io: Io)
   await writeFile(join(root, CONFIG_FILE), renderConfig(config));
   await applySync(root, result, null, STANDARD_VERSION);
   io.out(`applied standard ${STANDARD_VERSION}; wrote ${CONFIG_FILE}`);
-  io.out(`next: install dependencies (this installs the git hooks), then commit with "chore(repokit): apply standard ${STANDARD_VERSION}"`);
+  io.out(`next: install dependencies (this installs the git hooks), then commit with "chore(repokeeper): apply standard ${STANDARD_VERSION}"`);
   return 0;
 }
 
-/** Records the current content of every planned output as repokit's own, rebuilding a lost or corrupt lock. */
+/** Records the current content of every planned output as repokeeper's own, rebuilding a lost or corrupt lock. */
 async function relock(root: string, options: CommandOptions, io: Io): Promise<number> {
   const config = await loadConfig(root);
   const ctx = await buildContext(root, config);
@@ -2777,7 +2777,7 @@ async function relock(root: string, options: CommandOptions, io: Io): Promise<nu
     return 0;
   }
   await writeLock(root, lock);
-  io.out(`rebuilt .repokit/lock.json with ${lock.entries.length} entries`);
+  io.out(`rebuilt .repokeeper/lock.json with ${lock.entries.length} entries`);
   return 0;
 }
 ```
@@ -2797,7 +2797,7 @@ import { type CommandOptions, hasDrift, printResult } from "./report.js";
 
 export function assertSupportedStandard(standard: string): void {
   if (compareVersions(standard, STANDARD_VERSION) > 0) {
-    throw new UsageError(`this repository uses standard ${standard}, newer than ${STANDARD_VERSION}; upgrade repokit`);
+    throw new UsageError(`this repository uses standard ${standard}, newer than ${STANDARD_VERSION}; upgrade repokeeper`);
   }
 }
 
@@ -2806,7 +2806,7 @@ export async function checkCommand(root: string, options: CommandOptions, io: Io
   assertSupportedStandard(config.standard);
   const lock = await readLock(root);
   if (!lock) {
-    io.err("repokit: .repokit/lock.json is missing; run `repokit init --relock`");
+    io.err("repokeeper: .repokeeper/lock.json is missing; run `repokeeper init --relock`");
     return 1;
   }
   const ctx = await buildContext(root, config);
@@ -2827,7 +2827,7 @@ export async function checkCommand(root: string, options: CommandOptions, io: Io
     return clean ? 0 : 1;
   }
   printResult(io, result);
-  if (behind) io.out(`standard   ${config.standard} applied, ${STANDARD_VERSION} available (run \`repokit update\`)`);
+  if (behind) io.out(`standard   ${config.standard} applied, ${STANDARD_VERSION} available (run \`repokeeper update\`)`);
   io.out(clean ? "repository matches the standard" : "repository has drifted from the standard");
   return clean ? 0 : 1;
 }
@@ -2854,7 +2854,7 @@ export async function updateCommand(root: string, options: CommandOptions, io: I
   const config = await loadConfig(root);
   assertSupportedStandard(config.standard);
   const lock = await readLock(root);
-  if (!lock) throw new UsageError(".repokit/lock.json is missing; run `repokit init --relock` first");
+  if (!lock) throw new UsageError(".repokeeper/lock.json is missing; run `repokeeper init --relock` first");
   const ctx = await buildContext(root, { ...config, standard: STANDARD_VERSION });
   const adopt = options.adoptAll ? ("all" as const) : new Set(options.adopt);
   const result = await computeSync(root, planOutputs(ctx), lock, { adopt, accept: new Set(options.accept) });
@@ -2871,10 +2871,10 @@ export async function updateCommand(root: string, options: CommandOptions, io: I
   }
   const conflicts = result.decisions.filter((d) => d.action === "conflict");
   if (conflicts.length > 0) {
-    io.out(`${conflicts.length} file(s) kept because they were edited locally; new versions are beside them as *.repokit-new`);
+    io.out(`${conflicts.length} file(s) kept because they were edited locally; new versions are beside them as *.repokeeper-new`);
     return 1;
   }
-  io.out(`repository is on standard ${STANDARD_VERSION}; commit with "chore(repokit): update standard to ${STANDARD_VERSION}"`);
+  io.out(`repository is on standard ${STANDARD_VERSION}; commit with "chore(repokeeper): update standard to ${STANDARD_VERSION}"`);
   return 0;
 }
 ```
@@ -2933,16 +2933,16 @@ git commit -m "feat(cli): add init, check and update commands"
 
 ---
 
-### Task 11: Dogfood repokit on its own repository, add CI and open the pull request
+### Task 11: Dogfood repokeeper on its own repository, add CI and open the pull request
 
 **Files:**
-- Create: `README.md`, `.github/workflows/ci.yml`, plus everything `repokit init` generates for this repository (`.repokit.yml`, `.repokit/lock.json`, `.editorconfig`, `.gitattributes`, `commitlint.config.mjs`, `lefthook.yml`, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `.github/…`)
-- Modify: `.gitignore`, `package.json`, `package-lock.json` (by `repokit init` and `npm install`)
+- Create: `README.md`, `.github/workflows/ci.yml`, plus everything `repokeeper init` generates for this repository (`.repokeeper.yml`, `.repokeeper/lock.json`, `.editorconfig`, `.gitattributes`, `commitlint.config.mjs`, `lefthook.yml`, `LICENSE`, `SECURITY.md`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `.github/…`)
+- Modify: `.gitignore`, `package.json`, `package-lock.json` (by `repokeeper init` and `npm install`)
 
 **Interfaces:**
 - Consumes: the built CLI (`dist/cli.js`).
 
-- [ ] **Step 1: Apply repokit to itself**
+- [ ] **Step 1: Apply repokeeper to itself**
 
 ```bash
 npm run build
@@ -2999,7 +2999,7 @@ jobs:
 
 `README.md`:
 ````markdown
-# repokit
+# repokeeper
 
 Keep every repository on one maintained standard: Conventional Commits, git hooks, community health
 files, editor and gitignore settings, and Dependabot — applied once and kept in sync as the
@@ -3007,18 +3007,18 @@ standard evolves.
 
 > Status: early development. Node repositories are supported; reusable CI workflows, release
 > automation, more stacks and GitHub settings are on the way. See the
-> [design](docs/superpowers/specs/2026-09-25-repokit-design.md).
+> [design](docs/superpowers/specs/2026-09-25-repokeeper-design.md).
 
 ## Usage
 
 ```bash
-npx @vannt-dev/repokit init     # detect the stack, write .repokit.yml, apply the standard
-npx @vannt-dev/repokit check    # report drift; exits 1 when the repository has drifted
-npx @vannt-dev/repokit update   # move to the latest standard without overwriting your edits
+npx repokeeper init     # detect the stack, write .repokeeper.yml, apply the standard
+npx repokeeper check    # report drift; exits 1 when the repository has drifted
+npx repokeeper update   # move to the latest standard without overwriting your edits
 ```
 
 `init` never overwrites a file you already have: it reports it as unmanaged. Pass
-`--adopt <path>` to let repokit manage it, or list it under `owned` in `.repokit.yml` to keep it
+`--adopt <path>` to let repokeeper manage it, or list it under `owned` in `.repokeeper.yml` to keep it
 yours. Every write command accepts `--dry-run`.
 
 Requires Node.js 22.12 or newer.
@@ -3033,7 +3033,7 @@ MIT
 ```bash
 npm test && npm run typecheck && npm run build && node dist/cli.js check
 git add -A
-git commit -m "chore(repokit): apply standard 1.0.0 to repokit itself"
+git commit -m "chore(repokeeper): apply standard 1.0.0 to repokeeper itself"
 ```
 Expected: all green; the commit passes the `commit-msg` and `pre-commit` hooks.
 
@@ -3041,10 +3041,10 @@ Expected: all green; the commit passes the `commit-msg` and `pre-commit` hooks.
 
 ```bash
 git push -u origin feat/core
-gh pr create --base main --head feat/core --title "feat: repokit core (init, check, update for Node repositories)" --body-file - <<'EOF'
-Implements plan 1 of the repokit design: configuration, planner, sync engine with lock file, the
+gh pr create --base main --head feat/core --title "feat: repokeeper core (init, check, update for Node repositories)" --body-file - <<'EOF'
+Implements plan 1 of the repokeeper design: configuration, planner, sync engine with lock file, the
 editorconfig, gitignore, commits, hooks, health and deps modules, the node stack pack and the
-init/check/update commands. repokit applies its own standard to this repository.
+init/check/update commands. repokeeper applies its own standard to this repository.
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 EOF
