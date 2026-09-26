@@ -23,5 +23,12 @@ it("lists modified and untracked files among the given paths", async () => {
   execFileSync("git", ["init", "-q"], { cwd: dir });
   await writeFile(join(dir, "a.txt"), "a");
   await writeFile(join(dir, "b.txt"), "b");
-  expect((await dirtyPaths(dir, ["a.txt", "c.txt"])).sort()).toEqual(["a.txt"]);
+  expect(await dirtyPaths(dir, ["a.txt", "c.txt"])).toEqual([{ path: "a.txt", untracked: true }]);
+  execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "add", "a.txt"], { cwd: dir });
+  execFileSync("git", ["-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "a"], { cwd: dir });
+  await writeFile(join(dir, "a.txt"), "changed");
+  expect(await dirtyPaths(dir, ["a.txt", "b.txt"])).toEqual([
+    { path: "a.txt", untracked: false },
+    { path: "b.txt", untracked: true },
+  ]);
 });

@@ -117,6 +117,26 @@ describe("repokit end to end", () => {
     expect((await repokit(await tempDir(), "check")).code).toBe(2);
   });
 
+  it("refuses to write over uncommitted files without printing a plan it will not apply", async () => {
+    const dir = await nodeRepo();
+    await appendFile(join(dir, "package.json"), "\n");
+    const refused = await repokit(dir, "init");
+    expect(refused.code).toBe(2);
+    expect(refused.out).toBe("");
+    expect(refused.err).toContain("uncommitted changes in package.json;");
+    expect(existsSync(join(dir, ".repokit.yml"))).toBe(false);
+  });
+
+  it("names untracked files and says how to proceed in a repository without commits", async () => {
+    const dir = await nodeRepo(false);
+    sh(dir, "init", "-q", "-b", "main");
+    const refused = await repokit(dir, "init");
+    expect(refused.code).toBe(2);
+    expect(refused.out).toBe("");
+    expect(refused.err).toContain("uncommitted changes in package.json (untracked)");
+    expect(refused.err).toContain("untracked files are protected too");
+  });
+
   it("changes nothing on a dry run and prints JSON for check", async () => {
     const dir = await nodeRepo();
     expect((await repokit(dir, "init", "--dry-run")).code).toBe(0);

@@ -19,10 +19,14 @@ import { buildContext } from "./context.js";
 import { type CommandOptions, printResult } from "./report.js";
 
 export async function guardUncommitted(root: string, result: SyncResult, force: boolean): Promise<void> {
+  if (force) return;
   const dirty = await dirtyPaths(root, pathsToWrite(result));
-  if (dirty.length > 0 && !force) {
-    throw new UsageError(`uncommitted changes in ${dirty.join(", ")}; commit or stash them, or pass --force`);
-  }
+  if (dirty.length === 0) return;
+  const names = dirty.map((d) => (d.untracked ? `${d.path} (untracked)` : d.path)).join(", ");
+  const hint = dirty.some((d) => d.untracked)
+    ? "; untracked files are protected too, so commit them first (git add -A && git commit), or pass --force"
+    : "; commit or stash them, or pass --force";
+  throw new UsageError(`uncommitted changes in ${names}${hint}`);
 }
 
 export async function initCommand(root: string, options: CommandOptions, io: Io): Promise<number> {
@@ -45,12 +49,12 @@ export async function initCommand(root: string, options: CommandOptions, io: Io)
   const ctx = await buildContext(root, config, repo);
   const adopt = options.adoptAll ? ("all" as const) : new Set(options.adopt);
   const result = await computeSync(root, planOutputs(ctx), null, { adopt, accept: new Set() });
+  if (!options.dryRun) await guardUncommitted(root, result, options.force);
   printResult(io, result);
   if (options.dryRun) {
     io.out("dry run: nothing written");
     return 0;
   }
-  await guardUncommitted(root, result, options.force);
   await writeFile(join(root, CONFIG_FILE), renderConfig(config));
   await applySync(root, result, null, STANDARD_VERSION);
   io.out(`applied standard ${STANDARD_VERSION}; wrote ${CONFIG_FILE}`);

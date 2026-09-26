@@ -32,16 +32,21 @@ export async function gitUserName(root: string): Promise<string | null> {
   return (await git(root, ["config", "user.name"]))?.trim() || null;
 }
 
+export interface DirtyPath {
+  path: string;
+  untracked: boolean;
+}
+
 /** Paths among `paths` with uncommitted changes, including untracked files. Empty outside git. */
-export async function dirtyPaths(root: string, paths: string[]): Promise<string[]> {
+export async function dirtyPaths(root: string, paths: string[]): Promise<DirtyPath[]> {
   if (paths.length === 0 || !(await isGitRepo(root))) return [];
   const out = await git(root, ["status", "--porcelain=v1", "-z", "--untracked-files=all", "--", ...paths]);
   if (!out) return [];
   const tokens = out.split("\0").filter(Boolean);
-  const dirty: string[] = [];
+  const dirty: DirtyPath[] = [];
   for (let i = 0; i < tokens.length; i++) {
     const token = tokens[i] as string;
-    dirty.push(token.slice(3));
+    dirty.push({ path: token.slice(3), untracked: token.startsWith("??") });
     if (token.startsWith("R") || token.startsWith("C")) i++;
   }
   return dirty;

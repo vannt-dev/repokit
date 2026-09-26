@@ -21,12 +21,12 @@ export async function updateCommand(root: string, options: CommandOptions, io: I
   const ctx = await buildContext(root, { ...config, standard: STANDARD_VERSION });
   const adopt = options.adoptAll ? ("all" as const) : new Set(options.adopt);
   const result = await computeSync(root, planOutputs(ctx), lock, { adopt, accept: new Set(options.accept) });
+  if (!options.dryRun) await guardUncommitted(root, result, options.force);
   printResult(io, result);
   if (options.dryRun) {
     io.out("dry run: nothing written");
     return 0;
   }
-  await guardUncommitted(root, result, options.force);
   await applySync(root, result, lock, STANDARD_VERSION);
   if (config.standard !== STANDARD_VERSION) {
     const path = join(root, CONFIG_FILE);
