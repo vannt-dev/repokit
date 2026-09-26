@@ -55,7 +55,7 @@ export async function applySync(
     const id = outputId(output);
     if (action === "create" || action === "write" || action === "adopt") await write(root, output);
     if (action === "conflict" && output.kind === "file")
-      await put(join(root, `${output.path}.repokit-new`), output.content);
+      await put(join(root, `${output.path}.repokeeper-new`), output.content);
     if (action === "conflict") {
       const kept = previousEntries.get(id);
       if (kept) entries.push(kept);

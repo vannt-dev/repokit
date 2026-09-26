@@ -6,7 +6,7 @@ import { readBlock } from "./block.js";
 import { getAtPath } from "./json.js";
 import type { Target } from "./lock.js";
 
-/** The text repokit compares and hashes for an output. */
+/** The text repokeeper compares and hashes for an output. */
 export function desiredText(output: Output): string {
   if (output.kind === "file") return output.content;
   if (output.kind === "block") return output.body;

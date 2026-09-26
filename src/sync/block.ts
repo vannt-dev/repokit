@@ -7,11 +7,11 @@ function comment(style: CommentStyle, text: string): string {
 }
 
 export function startMarker(id: string, style: CommentStyle): string {
-  return comment(style, `repokit:start ${id}`);
+  return comment(style, `repokeeper:start ${id}`);
 }
 
 export function endMarker(id: string, style: CommentStyle): string {
-  return comment(style, `repokit:end ${id}`);
+  return comment(style, `repokeeper:end ${id}`);
 }
 
 function eolOf(text: string): string {

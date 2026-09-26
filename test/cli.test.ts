@@ -12,7 +12,7 @@ it("prints the package version", async () => {
 it("rejects an unknown command with exit code 2 and usage", async () => {
   const c = capture();
   expect(await run(["frobnicate"], c.io)).toBe(2);
-  expect(c.err.join("\n")).toContain("usage: repokit");
+  expect(c.err.join("\n")).toContain("usage: repokeeper");
 });
 
 it("rejects an unknown option with exit code 2", async () => {

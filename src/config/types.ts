@@ -22,7 +22,7 @@ export interface ModulesConfig {
   health: HealthConfig | false;
 }
 
-export interface RepokitConfig {
+export interface RepokeeperConfig {
   schema: 1;
   standard: string;
   platform: "github";
@@ -39,7 +39,7 @@ export function defaultConfig(input: {
   copyright: string;
   contact: string;
   codeowners: string[];
-}): RepokitConfig {
+}): RepokeeperConfig {
   return {
     schema: 1,
     standard: input.standard,

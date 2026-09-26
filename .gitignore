@@ -2,7 +2,7 @@ node_modules/
 dist/
 coverage/
 
-# repokit:start gitignore
+# repokeeper:start gitignore
 ## Node (github/gitignore)
 # Logs
 logs
@@ -154,6 +154,6 @@ vite.config.ts.timestamp-*
 # Turbo Repo
 .turbo
 
-## repokit
-*.repokit-new
-# repokit:end gitignore
+## repokeeper
+*.repokeeper-new
+# repokeeper:end gitignore

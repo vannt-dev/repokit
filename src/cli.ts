@@ -7,7 +7,7 @@ import { initCommand } from "./commands/init.js";
 import type { CommandOptions } from "./commands/report.js";
 import { updateCommand } from "./commands/update.js";
 import { STACK_IDS, type StackId } from "./config/types.js";
-import { RepokitError, UsageError } from "./errors.js";
+import { RepokeeperError, UsageError } from "./errors.js";
 import { PACKAGE_VERSION } from "./version.js";
 
 export interface Io {
@@ -17,20 +17,20 @@ export interface Io {
 }
 
 export const USAGE = [
-  "usage: repokit <command> [options]",
+  "usage: repokeeper <command> [options]",
   "",
   "commands:",
-  "  init    detect stacks, write .repokit.yml and apply the standard",
+  "  init    detect stacks, write .repokeeper.yml and apply the standard",
   "  check   report drift from the standard without writing (exit 1 on drift)",
-  "  update  move to the standard of this repokit version and resync",
+  "  update  move to the standard of this repokeeper version and resync",
   "",
   "options:",
   "  --dry-run        show what would change without writing",
   "  --force          write even when target files have uncommitted changes",
-  "  --adopt <path>   let repokit manage an existing file (repeatable); --adopt-all for every file",
-  "  --accept <path>  take repokit's version of a locally edited file (update, repeatable)",
+  "  --adopt <path>   let repokeeper manage an existing file (repeatable); --adopt-all for every file",
+  "  --accept <path>  take repokeeper's version of a locally edited file (update, repeatable)",
   "  --stack <id>     stack to use instead of detection (init, repeatable)",
-  "  --relock         rebuild .repokit/lock.json from the current files (init)",
+  "  --relock         rebuild .repokeeper/lock.json from the current files (init)",
   "  --json           machine-readable output (check)",
   "  -v, --version    print the version",
 ].join("\n");
@@ -86,13 +86,13 @@ export async function run(argv: string[], io: Io): Promise<number> {
     if (command === "update") return await updateCommand(io.cwd, options, io);
     throw new UsageError(`unknown command: ${command}`);
   } catch (error) {
-    if (error instanceof RepokitError) {
-      io.err(`repokit: ${error.message}`);
+    if (error instanceof RepokeeperError) {
+      io.err(`repokeeper: ${error.message}`);
       if (error instanceof UsageError) io.err(USAGE);
       return error.exitCode;
     }
     if (error instanceof TypeError && "code" in error && String(error.code).startsWith("ERR_PARSE_ARGS")) {
-      io.err(`repokit: ${error.message}`);
+      io.err(`repokeeper: ${error.message}`);
       io.err(USAGE);
       return 2;
     }

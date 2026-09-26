@@ -32,7 +32,7 @@ export async function guardUncommitted(root: string, result: SyncResult, force: 
 export async function initCommand(root: string, options: CommandOptions, io: Io): Promise<number> {
   if (options.relock) return relock(root, options, io);
   if (existsSync(join(root, CONFIG_FILE))) {
-    throw new UsageError(`${CONFIG_FILE} already exists; run \`repokit update\` or \`repokit check\``);
+    throw new UsageError(`${CONFIG_FILE} already exists; run \`repokeeper update\` or \`repokeeper check\``);
   }
   const stacks = options.stacks.length > 0 ? options.stacks : await detectStacks(root);
   if (stacks.length === 0) throw new UsageError("no supported stack detected; pass --stack node");
@@ -59,12 +59,12 @@ export async function initCommand(root: string, options: CommandOptions, io: Io)
   await applySync(root, result, null, STANDARD_VERSION);
   io.out(`applied standard ${STANDARD_VERSION}; wrote ${CONFIG_FILE}`);
   io.out(
-    `next: install dependencies (this installs the git hooks), then commit with "chore(repokit): apply standard ${STANDARD_VERSION}"`,
+    `next: install dependencies (this installs the git hooks), then commit with "chore(repokeeper): apply standard ${STANDARD_VERSION}"`,
   );
   return 0;
 }
 
-/** Records the current content of every planned output as repokit's own, rebuilding a lost or corrupt lock. */
+/** Records the current content of every planned output as repokeeper's own, rebuilding a lost or corrupt lock. */
 async function relock(root: string, options: CommandOptions, io: Io): Promise<number> {
   const config = await loadConfig(root);
   const ctx = await buildContext(root, config);
@@ -85,6 +85,6 @@ async function relock(root: string, options: CommandOptions, io: Io): Promise<nu
     return 0;
   }
   await writeLock(root, lock);
-  io.out(`rebuilt .repokit/lock.json with ${lock.entries.length} entries`);
+  io.out(`rebuilt .repokeeper/lock.json with ${lock.entries.length} entries`);
   return 0;
 }

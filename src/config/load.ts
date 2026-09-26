@@ -4,23 +4,23 @@ import { Ajv, type ErrorObject } from "ajv";
 import { type Document, isNode, LineCounter, parseDocument, stringify } from "yaml";
 import { ConfigError } from "../errors.js";
 import { configSchema } from "./schema.js";
-import type { ModulesConfig, RepokitConfig } from "./types.js";
+import type { ModulesConfig, RepokeeperConfig } from "./types.js";
 
-export const CONFIG_FILE = ".repokit.yml";
+export const CONFIG_FILE = ".repokeeper.yml";
 
 const validate = new Ajv({ allErrors: false }).compile(configSchema);
 
-export async function loadConfig(root: string): Promise<RepokitConfig> {
+export async function loadConfig(root: string): Promise<RepokeeperConfig> {
   let text: string;
   try {
     text = await readFile(join(root, CONFIG_FILE), "utf8");
   } catch {
-    throw new ConfigError(`${CONFIG_FILE} not found; run \`repokit init\` first`);
+    throw new ConfigError(`${CONFIG_FILE} not found; run \`repokeeper init\` first`);
   }
   return parseConfig(text);
 }
 
-export function parseConfig(text: string): RepokitConfig {
+export function parseConfig(text: string): RepokeeperConfig {
   const lineCounter = new LineCounter();
   const doc = parseDocument(text, { lineCounter });
   const syntax = doc.errors[0];
@@ -35,12 +35,12 @@ export function parseConfig(text: string): RepokitConfig {
     throw new ConfigError(`${CONFIG_FILE}:${lineOf(doc, lineCounter, path)}: ${describe(error, path)}`);
   }
   return withDefaults(
-    data as Partial<RepokitConfig> & Pick<RepokitConfig, "schema" | "standard" | "platform" | "stacks">,
+    data as Partial<RepokeeperConfig> & Pick<RepokeeperConfig, "schema" | "standard" | "platform" | "stacks">,
   );
 }
 
-export function renderConfig(config: RepokitConfig): string {
-  return `# repokit configuration: https://github.com/vannt-dev/repokit\n${stringify(config)}`;
+export function renderConfig(config: RepokeeperConfig): string {
+  return `# repokeeper configuration: https://github.com/vannt-dev/repokeeper\n${stringify(config)}`;
 }
 
 /** Rewrites `standard:` in place, keeping every comment and the rest of the layout. */
@@ -51,15 +51,15 @@ export function setStandard(text: string, version: string): string {
 }
 
 function withDefaults(
-  data: Partial<RepokitConfig> & Pick<RepokitConfig, "schema" | "standard" | "platform" | "stacks">,
-): RepokitConfig {
+  data: Partial<RepokeeperConfig> & Pick<RepokeeperConfig, "schema" | "standard" | "platform" | "stacks">,
+): RepokeeperConfig {
   const modules = (data.modules ?? {}) as Partial<ModulesConfig>;
   if (modules.health === undefined) {
     throw new ConfigError(
       `${CONFIG_FILE}: modules.health is required; set it to false to leave community health files alone`,
     );
   }
-  const config: RepokitConfig = {
+  const config: RepokeeperConfig = {
     schema: data.schema,
     standard: data.standard,
     platform: data.platform,

@@ -7,7 +7,7 @@
       "!!**/dist",
       "!docs",
       "!templates",
-      "!.repokit",
+      "!.repokeeper",
       "!commitlint.config.mjs",
       "!package.json",
       "!package-lock.json"

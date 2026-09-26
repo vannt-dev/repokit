@@ -33,7 +33,7 @@ describe("sync", () => {
     const result = await syncTo(root, v1);
     expect(actions(result)).toEqual({ "nested/dir/a.txt": "create", ".gitignore": "create", "package.json": "create" });
     expect(await readFile(join(root, ".gitignore"), "utf8")).toBe(
-      "node_modules/\n\n# repokit:start b\ndist/\n# repokit:end b\n",
+      "node_modules/\n\n# repokeeper:start b\ndist/\n# repokeeper:end b\n",
     );
     expect(await readFile(join(root, "package.json"), "utf8")).toBe(
       '{\r\n    "name": "x",\r\n    "devDependencies": {\r\n        "lefthook": "^2.1.14"\r\n    }\r\n}\r\n',
@@ -58,7 +58,7 @@ describe("sync", () => {
       "package.json": "unchanged",
     });
     expect(await readFile(join(root, "nested/dir/a.txt"), "utf8")).toBe("mine\n");
-    expect(await readFile(join(root, "nested/dir/a.txt.repokit-new"), "utf8")).toBe("a2\n");
+    expect(await readFile(join(root, "nested/dir/a.txt.repokeeper-new"), "utf8")).toBe("a2\n");
     // The conflict keeps its old lock entry, so it is still reported next time.
     const again = await computeSync(root, v2, await readLock(root), none);
     expect(actions(again)["nested/dir/a.txt"]).toBe("conflict");

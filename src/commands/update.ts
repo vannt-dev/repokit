@@ -17,7 +17,7 @@ export async function updateCommand(root: string, options: CommandOptions, io: I
   const config = await loadConfig(root);
   assertSupportedStandard(config.standard);
   const lock = await readLock(root);
-  if (!lock) throw new UsageError(".repokit/lock.json is missing; run `repokit init --relock` first");
+  if (!lock) throw new UsageError(".repokeeper/lock.json is missing; run `repokeeper init --relock` first");
   const ctx = await buildContext(root, { ...config, standard: STANDARD_VERSION });
   const adopt = options.adoptAll ? ("all" as const) : new Set(options.adopt);
   const result = await computeSync(root, planOutputs(ctx), lock, { adopt, accept: new Set(options.accept) });
@@ -35,12 +35,12 @@ export async function updateCommand(root: string, options: CommandOptions, io: I
   const conflicts = result.decisions.filter((d) => d.action === "conflict");
   if (conflicts.length > 0) {
     io.out(
-      `${conflicts.length} file(s) kept because they were edited locally; new versions are beside them as *.repokit-new`,
+      `${conflicts.length} file(s) kept because they were edited locally; new versions are beside them as *.repokeeper-new`,
     );
     return 1;
   }
   io.out(
-    `repository is on standard ${STANDARD_VERSION}; commit with "chore(repokit): update standard to ${STANDARD_VERSION}"`,
+    `repository is on standard ${STANDARD_VERSION}; commit with "chore(repokeeper): update standard to ${STANDARD_VERSION}"`,
   );
   return 0;
 }

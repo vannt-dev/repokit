@@ -14,8 +14,9 @@ export interface CommandOptions {
 }
 
 const HINTS: Record<string, (path: string) => string> = {
-  conflict: (p) => `edited locally; take repokit's version with --accept ${p}, or add it to owned in .repokit.yml`,
-  unmanaged: (p) => `exists and is not managed; let repokit manage it with --adopt ${p}, or add it to owned`,
+  conflict: (p) =>
+    `edited locally; take repokeeper's version with --accept ${p}, or add it to owned in .repokeeper.yml`,
+  unmanaged: (p) => `exists and is not managed; let repokeeper manage it with --adopt ${p}, or add it to owned`,
 };
 
 export function printResult(io: Io, result: SyncResult): void {

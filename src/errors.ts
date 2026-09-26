@@ -1,4 +1,4 @@
-export class RepokitError extends Error {
+export class RepokeeperError extends Error {
   constructor(
     message: string,
     readonly exitCode: number,
@@ -8,22 +8,22 @@ export class RepokitError extends Error {
   }
 }
 
-/** `.repokit.yml` is missing or invalid. */
-export class ConfigError extends RepokitError {
+/** `.repokeeper.yml` is missing or invalid. */
+export class ConfigError extends RepokeeperError {
   constructor(message: string) {
     super(message, 2);
   }
 }
 
 /** The command cannot run as requested. */
-export class UsageError extends RepokitError {
+export class UsageError extends RepokeeperError {
   constructor(message: string) {
     super(message, 2);
   }
 }
 
-/** `.repokit/lock.json` is unreadable; the repository state is unknown, which counts as drift. */
-export class LockError extends RepokitError {
+/** `.repokeeper/lock.json` is unreadable; the repository state is unknown, which counts as drift. */
+export class LockError extends RepokeeperError {
   constructor(message: string) {
     super(message, 1);
   }

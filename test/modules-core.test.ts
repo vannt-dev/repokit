@@ -20,12 +20,12 @@ describe("editorconfig", () => {
 });
 
 describe("gitignore", () => {
-  it("adds the stack templates and ignores repokit's conflict files", () => {
+  it("adds the stack templates and ignores repokeeper's conflict files", () => {
     const [block] = gitignoreModule.outputs(makeContext()) as [BlockOutput];
     expect(block).toMatchObject({ kind: "block", path: ".gitignore", id: "gitignore" });
     expect(block.body).toContain("## Node (github/gitignore)");
     expect(block.body).toContain("node_modules/");
-    expect(block.body.endsWith("*.repokit-new")).toBe(true);
+    expect(block.body.endsWith("*.repokeeper-new")).toBe(true);
   });
 });
 

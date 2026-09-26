@@ -1,6 +1,6 @@
 # Contributing
 
-<!-- Managed by repokit (https://github.com/vannt-dev/repokit). Edits are reported by `repokit check`. -->
+<!-- Managed by repokeeper (https://github.com/vannt-dev/repokeeper). Edits are reported by `repokeeper check`. -->
 
 Thanks for helping improve this project.
 

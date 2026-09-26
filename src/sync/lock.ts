@@ -4,7 +4,7 @@ import { LockError } from "../errors.js";
 import type { Output } from "../model.js";
 import type { CommentStyle } from "./block.js";
 
-export const LOCK_FILE = ".repokit/lock.json";
+export const LOCK_FILE = ".repokeeper/lock.json";
 
 export type Target =
   | { kind: "file"; path: string }
@@ -20,7 +20,7 @@ export function targetOf(output: Output): Target {
 export interface LockEntry {
   id: string;
   module: string;
-  /** Hash of the content repokit last wrote (see desiredText). */
+  /** Hash of the content repokeeper last wrote (see desiredText). */
   hash: string;
   target: Target;
 }
@@ -44,7 +44,7 @@ export async function readLock(root: string): Promise<Lock | null> {
     if (data.lockVersion !== 1 || !Array.isArray(data.entries)) throw new Error("unexpected format");
     return data;
   } catch (error) {
-    throw new LockError(`${LOCK_FILE} is unreadable (${(error as Error).message}); run \`repokit init --relock\``);
+    throw new LockError(`${LOCK_FILE} is unreadable (${(error as Error).message}); run \`repokeeper init --relock\``);
   }
 }
 

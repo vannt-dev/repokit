@@ -22,7 +22,7 @@ describe("decide", () => {
   it("leaves matching content alone", () => expect(decide(file, "new\n", entry("old\n"), false)).toBe("unchanged"));
   it("treats a CRLF checkout of the same content as unchanged", () =>
     expect(decide(file, "new\r\n", entry("new\n"), false)).toBe("unchanged"));
-  it("writes over content repokit wrote earlier", () =>
+  it("writes over content repokeeper wrote earlier", () =>
     expect(decide(file, "old\n", entry("old\n"), false)).toBe("write"));
   it("flags content the user edited", () => expect(decide(file, "mine\n", entry("old\n"), false)).toBe("conflict"));
   it("does not take over an existing file", () => expect(decide(file, "mine\n", undefined, false)).toBe("unmanaged"));
@@ -39,7 +39,7 @@ describe("state", () => {
   it("reads files, blocks and JSON keys as comparable text", async () => {
     const root = await tempDir();
     await writeFile(join(root, "a.txt"), "hello\n");
-    await writeFile(join(root, ".gitignore"), "x\n\n# repokit:start g\ndist/\n# repokit:end g\n");
+    await writeFile(join(root, ".gitignore"), "x\n\n# repokeeper:start g\ndist/\n# repokeeper:end g\n");
     await writeFile(join(root, "package.json"), '{ "devDependencies": { "lefthook": "^2.1.14" } }');
     expect(await readCurrent(root, { kind: "file", path: "a.txt" })).toBe("hello\n");
     expect(await readCurrent(root, { kind: "file", path: "missing.txt" })).toBeNull();
@@ -63,9 +63,9 @@ describe("lock", () => {
 
   it("rejects a corrupt lock with a hint", async () => {
     const root = await tempDir();
-    await mkdir(join(root, ".repokit"));
+    await mkdir(join(root, ".repokeeper"));
     await writeFile(join(root, LOCK_FILE), "{ nope");
     await expect(readLock(root)).rejects.toThrow(LockError);
-    await expect(readLock(root)).rejects.toThrow("repokit init --relock");
+    await expect(readLock(root)).rejects.toThrow("repokeeper init --relock");
   });
 });

@@ -10,8 +10,8 @@ describe("hashText", () => {
 });
 
 describe("blocks", () => {
-  const start = "# repokit:start gitignore";
-  const end = "# repokit:end gitignore";
+  const start = "# repokeeper:start gitignore";
+  const end = "# repokeeper:end gitignore";
 
   it("creates a file holding only the block", () => {
     expect(upsertBlock(null, "gitignore", "dist/", "hash")).toBe(`${start}\ndist/\n${end}\n`);
@@ -36,7 +36,9 @@ describe("blocks", () => {
   });
 
   it("uses HTML comments for markdown", () => {
-    expect(upsertBlock(null, "x", "body", "html")).toBe("<!-- repokit:start x -->\nbody\n<!-- repokit:end x -->\n");
+    expect(upsertBlock(null, "x", "body", "html")).toBe(
+      "<!-- repokeeper:start x -->\nbody\n<!-- repokeeper:end x -->\n",
+    );
   });
 
   it("removes the block and the blank line before it", () => {

@@ -4,7 +4,7 @@ export const PACKAGE_VERSION: string = (
   JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8")) as { version: string }
 ).version;
 
-/** The standard this build of repokit applies. Bump it whenever generated output changes. */
+/** The standard this build of repokeeper applies. Bump it whenever generated output changes. */
 export const STANDARD_VERSION = "1.0.0";
 
 export const TOOL_VERSIONS = {

@@ -1,10 +1,10 @@
 {
-  "name": "@vannt-dev/repokit",
+  "name": "repokeeper",
   "version": "0.1.0",
   "description": "Keep every repository on one maintained standard: commits, git hooks, CI, releases, dependency updates and repo settings.",
   "type": "module",
   "bin": {
-    "repokit": "dist/cli.js"
+    "repokeeper": "dist/cli.js"
   },
   "files": [
     "dist/",
@@ -36,11 +36,11 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vannt-dev/repokit.git"
+    "url": "git+https://github.com/vannt-dev/repokeeper.git"
   },
-  "homepage": "https://github.com/vannt-dev/repokit#readme",
+  "homepage": "https://github.com/vannt-dev/repokeeper#readme",
   "bugs": {
-    "url": "https://github.com/vannt-dev/repokit/issues"
+    "url": "https://github.com/vannt-dev/repokeeper/issues"
   },
   "keywords": [
     "repository",

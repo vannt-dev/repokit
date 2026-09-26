@@ -9,7 +9,7 @@ const PACKS: Partial<Record<StackId, StackPack>> = { node: nodeStack };
 
 export function getStackPack(id: StackId): StackPack {
   const pack = PACKS[id];
-  if (!pack) throw new UsageError(`the ${id} stack is not available in this version of repokit`);
+  if (!pack) throw new UsageError(`the ${id} stack is not available in this version of repokeeper`);
   return pack;
 }
 

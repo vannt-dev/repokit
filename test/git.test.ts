@@ -6,8 +6,14 @@ import { dirtyPaths, isGitRepo, parseRemoteUrl, repoInfo } from "../src/git.js";
 import { tempDir } from "./helpers.js";
 
 it("parses GitHub remotes in HTTPS and SSH form", () => {
-  expect(parseRemoteUrl("https://github.com/vannt-dev/repokit.git")).toEqual({ owner: "vannt-dev", name: "repokit" });
-  expect(parseRemoteUrl("git@github.com:vannt-dev/repokit.git\n")).toEqual({ owner: "vannt-dev", name: "repokit" });
+  expect(parseRemoteUrl("https://github.com/vannt-dev/repokeeper.git")).toEqual({
+    owner: "vannt-dev",
+    name: "repokeeper",
+  });
+  expect(parseRemoteUrl("git@github.com:vannt-dev/repokeeper.git\n")).toEqual({
+    owner: "vannt-dev",
+    name: "repokeeper",
+  });
   expect(parseRemoteUrl("https://gitlab.com/a/b.git")).toBeNull();
 });
 

@@ -39,7 +39,7 @@ export const healthModule: Module = {
     if (health.license !== false) {
       if (health.license !== "MIT") {
         throw new UsageError(
-          `license ${health.license} is not bundled with this version of repokit; use MIT, or set modules.health.license to false`,
+          `license ${health.license} is not bundled with this version of repokeeper; use MIT, or set modules.health.license to false`,
         );
       }
       outputs.push(md("LICENSE", MIT(health.copyright)));

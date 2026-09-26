@@ -1,8 +1,8 @@
-import type { RepokitConfig, StackId } from "./config/types.js";
+import type { RepokeeperConfig, StackId } from "./config/types.js";
 import type { CommentStyle } from "./sync/block.js";
 
 export const MANAGED_HEADER =
-  "Managed by repokit (https://github.com/vannt-dev/repokit). Edits are reported by `repokit check`.";
+  "Managed by repokeeper (https://github.com/vannt-dev/repokeeper). Edits are reported by `repokeeper check`.";
 
 export interface FileOutput {
   kind: "file";
@@ -71,7 +71,7 @@ export interface PlatformAdapter {
 }
 
 export interface ModuleContext {
-  config: RepokitConfig;
+  config: RepokeeperConfig;
   stacks: ResolvedStack[];
   platform: PlatformAdapter;
   repo: RepoInfo;
@@ -79,6 +79,6 @@ export interface ModuleContext {
 
 export interface Module {
   id: string;
-  enabled(config: RepokitConfig): boolean;
+  enabled(config: RepokeeperConfig): boolean;
   outputs(ctx: ModuleContext): Output[];
 }
