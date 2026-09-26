@@ -107,6 +107,8 @@ export interface PlatformAdapter {
   id: "github";
   communityFiles(ctx: ModuleContext): Output[];
   dependencyUpdates(ecosystems: string[]): Output[];
+  /** The caller CI workflow; empty when no job would run. */
+  ciWorkflow(ctx: ModuleContext): Output[];
 }
 
 export interface ModuleContext {

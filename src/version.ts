@@ -13,6 +13,12 @@ export const TOOL_VERSIONS = {
   commitlintConventional: "21.2.3",
 } as const;
 
+/** Repository hosting the reusable workflows that generated CI files call. */
+export const REUSABLE_REPO = "vannt-dev/repokeeper";
+
+/** Moving tag callers pin to: the major version of this repokeeper (v0 during 0.x). */
+export const WORKFLOW_REF = `v${PACKAGE_VERSION.split(".")[0]}`;
+
 export function compareVersions(a: string, b: string): number {
   const pa = a.split(".").map(Number);
   const pb = b.split(".").map(Number);

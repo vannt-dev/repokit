@@ -15,6 +15,7 @@ it("plans every core output for a node repository", () => {
     ".github/ISSUE_TEMPLATE/feature_request.yml",
     ".github/dependabot.yml",
     ".github/pull_request_template.md",
+    ".github/workflows/ci.yml",
     ".gitignore",
     "CODE_OF_CONDUCT.md",
     "CONTRIBUTING.md",

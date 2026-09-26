@@ -137,6 +137,20 @@ describe("repokeeper end to end", () => {
     expect(refused.err).toContain("untracked files are protected too");
   });
 
+  it("keeps jobs the user adds to ci.yml and reports edits to the jobs it manages", async () => {
+    const dir = await nodeRepo();
+    await repokeeper(dir, "init");
+    const ci = join(dir, ".github/workflows/ci.yml");
+    await appendFile(ci, "  docs:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo docs\n");
+    commitAll(dir);
+    expect((await repokeeper(dir, "check")).code).toBe(0);
+
+    await writeFile(ci, (await readFile(ci, "utf8")).replace('["22","24"]', '["24"]'));
+    const drift = await repokeeper(dir, "check");
+    expect(drift.code).toBe(1);
+    expect(drift.out).toContain("conflict   .github/workflows/ci.yml (jobs.node)");
+  });
+
   it("changes nothing on a dry run and prints JSON for check", async () => {
     const dir = await nodeRepo();
     expect((await repokeeper(dir, "init", "--dry-run")).code).toBe(0);
