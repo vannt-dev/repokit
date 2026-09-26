@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { parse } from "yaml";
 import { nodeStack } from "../src/stacks/node.js";
+import { pythonStack } from "../src/stacks/python.js";
 import type { StackPack } from "../src/stacks/types.js";
 import { TOOL_VERSIONS } from "../src/version.js";
 
@@ -21,12 +22,13 @@ interface Workflow {
 }
 
 /** Reusable workflows hosted here. Each stack task appends its workflow. */
-const REUSABLE = ["stack-node.yml", "commitlint.yml", "release-please.yml"];
+const REUSABLE = ["stack-node.yml", "commitlint.yml", "release-please.yml", "stack-python.yml"];
 
 /** Fixture jobs in workflow-tests.yml and the pack that resolves each fixture. Each stack task appends its rows. */
 const FIXTURES: { job: string; dir: string; pack: StackPack }[] = [
   { job: "node-npm", dir: "fixtures/node", pack: nodeStack },
   { job: "node-pnpm", dir: "fixtures/node-pnpm", pack: nodeStack },
+  { job: "python", dir: "fixtures/python", pack: pythonStack },
 ];
 
 const read = (name: string) => readFileSync(`.github/workflows/${name}`, "utf8");

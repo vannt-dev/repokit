@@ -1,0 +1,70 @@
+name: stack-python
+
+on:
+  workflow_call:
+    inputs:
+      python-versions:
+        description: JSON list of Python versions
+        type: string
+        default: '["3.11","3.12","3.13"]'
+      os:
+        description: JSON list of runner labels
+        type: string
+        default: '["ubuntu-latest"]'
+      manager:
+        description: pip or uv
+        type: string
+        default: pip
+      install-command:
+        description: Command that installs the project and its check tools
+        type: string
+        default: python -m pip install ruff
+      commands:
+        description: JSON list of shell commands run in order
+        type: string
+        default: '["ruff format --check .","ruff check ."]'
+      working-directory:
+        description: Directory holding the project
+        type: string
+        default: .
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: python ${{ matrix.python }} (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJSON(inputs.os) }}
+        python: ${{ fromJSON(inputs.python-versions) }}
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    env:
+      UV_PYTHON: ${{ matrix.python }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: ${{ matrix.python }}
+      - if: inputs.manager == 'uv'
+        uses: astral-sh/setup-uv@c18668ad3cf93ea998bef934396af7bb5c839dc7 # v10.2.0
+      - name: Install dependencies
+        run: ${{ inputs.install-command }}
+      - name: Run checks
+        env:
+          COMMANDS: ${{ inputs.commands }}
+        run: |
+          node -e 'for (const c of JSON.parse(process.env.COMMANDS)) console.log(c)' | while IFS= read -r command; do
+            echo "::group::$command"
+            bash -c "$command" </dev/null
+            echo "::endgroup::"
+          done
