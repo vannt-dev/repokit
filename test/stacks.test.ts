@@ -64,7 +64,7 @@ describe("registry", () => {
     expect(await detectStacks(await repoWith({ "README.md": "" }))).toEqual([]);
   });
 
-  it("explains that other packs are not available yet", () => {
-    expect(() => getStackPack("python")).toThrow(UsageError);
+  it("explains that a pack is not available yet", () => {
+    expect(() => getStackPack("dotnet")).toThrow(UsageError);
   });
 });

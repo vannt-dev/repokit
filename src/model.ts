@@ -75,10 +75,15 @@ export interface CiJob {
 
 export type ReleaseType = "node" | "python" | "dart" | "maven" | "simple";
 
+/** A release-please `extra-files` entry: a path with release-please markers, or an XML element. */
+export type ReleaseExtraFile = string | { type: "xml"; path: string; xpath: string };
+
 export interface ReleaseInfo {
   type: ReleaseType;
   /** Current version read from the project, or null when it has none. */
   version: string | null;
+  /** Files release-please updates besides the release type's own, such as Directory.Build.props. */
+  extraFiles?: ReleaseExtraFile[];
 }
 
 export interface ResolvedStack {

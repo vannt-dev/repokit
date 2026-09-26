@@ -1,6 +1,4 @@
-import { existsSync } from "node:fs";
-import { join } from "node:path";
-import type { StackId } from "../config/types.js";
+import { STACK_IDS, type StackId } from "../config/types.js";
 import { UsageError } from "../errors.js";
 import { nodeStack } from "./node.js";
 import type { StackPack } from "./types.js";
@@ -14,7 +12,7 @@ export function getStackPack(id: StackId): StackPack {
 }
 
 export async function detectStacks(root: string): Promise<StackId[]> {
-  return Object.values(PACKS)
-    .filter((pack) => pack.detect.some((file) => existsSync(join(root, file))))
-    .map((pack) => pack.id);
+  const found = STACK_IDS.filter((id) => PACKS[id]?.detect(root) ?? false);
+  // scripts beside another stack belong to that stack; the script pack is for script-only repositories
+  return found.length > 1 ? found.filter((id) => id !== "script") : found;
 }
