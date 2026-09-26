@@ -2,6 +2,11 @@
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { parseArgs } from "node:util";
+import { checkCommand } from "./commands/check.js";
+import { initCommand } from "./commands/init.js";
+import type { CommandOptions } from "./commands/report.js";
+import { updateCommand } from "./commands/update.js";
+import { STACK_IDS, type StackId } from "./config/types.js";
 import { RepokitError, UsageError } from "./errors.js";
 import { PACKAGE_VERSION } from "./version.js";
 
@@ -29,6 +34,8 @@ export const USAGE = [
   "  --json           machine-readable output (check)",
   "  -v, --version    print the version",
 ].join("\n");
+
+const toPosix = (path: string) => path.replace(/\\/g, "/").replace(/^\.\//, "");
 
 export async function run(argv: string[], io: Io): Promise<number> {
   try {
@@ -58,6 +65,25 @@ export async function run(argv: string[], io: Io): Promise<number> {
       io.out(USAGE);
       return command === undefined && !values.help ? 2 : 0;
     }
+    const stacks = values.stack as string[];
+    for (const stack of stacks) {
+      if (!(STACK_IDS as readonly string[]).includes(stack)) {
+        throw new UsageError(`unknown stack ${stack}; expected one of ${STACK_IDS.join(", ")}`);
+      }
+    }
+    const options: CommandOptions = {
+      dryRun: values["dry-run"] as boolean,
+      force: values.force as boolean,
+      adopt: (values.adopt as string[]).map(toPosix),
+      adoptAll: values["adopt-all"] as boolean,
+      accept: (values.accept as string[]).map(toPosix),
+      stacks: stacks as StackId[],
+      relock: values.relock as boolean,
+      json: values.json as boolean,
+    };
+    if (command === "init") return await initCommand(io.cwd, options, io);
+    if (command === "check") return await checkCommand(io.cwd, options, io);
+    if (command === "update") return await updateCommand(io.cwd, options, io);
     throw new UsageError(`unknown command: ${command}`);
   } catch (error) {
     if (error instanceof RepokitError) {
