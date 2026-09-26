@@ -134,7 +134,7 @@ export const githubPlatform: PlatformAdapter = {
     if (jobs.length === 0) return [];
     return [
       workflowKey("ci", path, ["name"], "ci"),
-      workflowKey("ci", path, ["on"], { pull_request: {}, push: { branches: [defaultBranch(ctx)] } }),
+      workflowKey("ci", path, ["on"], { pull_request: null, push: { branches: [defaultBranch(ctx)] } }),
       workflowKey("ci", path, ["permissions"], { contents: "read" }),
       ...jobs,
     ];
@@ -169,7 +169,7 @@ export const githubPlatform: PlatformAdapter = {
       workflowKey("release", path, ["on"], { push: { branches: [defaultBranch(ctx)] } }),
       workflowKey("release", path, ["permissions"], { contents: "read" }),
       workflowKey("release", path, ["jobs", "release"], {
-        uses: workflowRef(ctx, "release.yml"),
+        uses: workflowRef(ctx, "release-please.yml"),
         permissions: { contents: "write", "pull-requests": "write", issues: "write" },
         // biome-ignore lint/suspicious/noTemplateCurlyInString: a GitHub Actions expression, not a JS template
         secrets: { token: "${{ secrets.RELEASE_PLEASE_TOKEN }}" },

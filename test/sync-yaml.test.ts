@@ -33,6 +33,10 @@ describe("yaml keys", () => {
     expect(parse(next)).toEqual({ name: "ci", jobs: { mine: { "runs-on": "ubuntu-latest" }, node: { uses: "new" } } });
   });
 
+  it("writes null as an empty value, the way workflows spell `pull_request:`", () => {
+    expect(setYamlKey(null, "ci.yml", ["on"], { pull_request: null }, options)).toContain("on:\n  pull_request:\n");
+  });
+
   it("does not fold long commands", () => {
     const run = `echo ${"x".repeat(200)}`;
     expect(setYamlKey(null, "a.yml", ["run"], run, options)).toContain(`run: ${run}\n`);

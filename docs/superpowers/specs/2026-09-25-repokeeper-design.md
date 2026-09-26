@@ -192,7 +192,7 @@ Hosted in this repository under `.github/workflows/`:
 
 `stack-node.yml`, `stack-python.yml`, `stack-dart.yml`, `stack-script.yml`, `stack-java.yml`,
 `stack-dotnet.yml`, `commitlint.yml`,
-`release.yml`.
+`release-please.yml` (not `release.yml`, which is the caller path in every repository, this one included).
 
 The caller workflow a repository receives:
 

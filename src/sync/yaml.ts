@@ -17,7 +17,7 @@ function parse(text: string, file: string): Document {
 }
 
 function render(doc: Document, original: string | null): string {
-  const text = doc.toString({ lineWidth: 0 });
+  const text = doc.toString({ lineWidth: 0, nullStr: "" });
   return original?.includes("\r\n") ? text.replace(/\r?\n/g, "\r\n") : text;
 }
 

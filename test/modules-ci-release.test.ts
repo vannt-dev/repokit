@@ -15,7 +15,7 @@ describe("ci module", () => {
   it("calls the reusable workflows at the moving major tag", () => {
     const out = keys(ciModule.outputs(makeContext()));
     expect(out.name).toBe("ci");
-    expect(out.on).toEqual({ pull_request: {}, push: { branches: ["main"] } });
+    expect(out.on).toEqual({ pull_request: null, push: { branches: ["main"] } });
     expect(out.permissions).toEqual({ contents: "read" });
     expect(out["jobs.node"]).toEqual({
       uses: `vannt-dev/repokeeper/.github/workflows/stack-node.yml@${WORKFLOW_REF}`,
@@ -35,7 +35,7 @@ describe("ci module", () => {
   it("follows the configured default branch and drops the commits job with the commits module", () => {
     const ctx = makeContext({ config: { github: { default_branch: "trunk" } }, modules: { commits: false } });
     const out = keys(ciModule.outputs(ctx));
-    expect(out.on).toEqual({ pull_request: {}, push: { branches: ["trunk"] } });
+    expect(out.on).toEqual({ pull_request: null, push: { branches: ["trunk"] } });
     expect(out["jobs.commits"]).toBeUndefined();
   });
 
@@ -80,7 +80,7 @@ describe("release module", () => {
     expect(out.on).toEqual({ push: { branches: ["main"] } });
     expect(out.permissions).toEqual({ contents: "read" });
     expect(out["jobs.release"]).toEqual({
-      uses: `vannt-dev/repokeeper/.github/workflows/release.yml@${WORKFLOW_REF}`,
+      uses: `vannt-dev/repokeeper/.github/workflows/release-please.yml@${WORKFLOW_REF}`,
       permissions: { contents: "write", "pull-requests": "write", issues: "write" },
       // biome-ignore lint/suspicious/noTemplateCurlyInString: a GitHub Actions expression, not a JS template
       secrets: { token: "${{ secrets.RELEASE_PLEASE_TOKEN }}" },

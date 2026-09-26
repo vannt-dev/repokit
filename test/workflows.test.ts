@@ -23,7 +23,7 @@ const read = (name: string) => readFileSync(`.github/workflows/${name}`, "utf8")
 const workflow = (name: string) => parse(read(name)) as Workflow;
 const steps = (wf: Workflow) => Object.values(wf.jobs).flatMap((job) => job.steps ?? []);
 
-describe.each(["stack-node.yml", "commitlint.yml", "release.yml"])("%s", (name) => {
+describe.each(["stack-node.yml", "commitlint.yml", "release-please.yml"])("%s", (name) => {
   it("is a reusable workflow whose jobs all declare permissions", () => {
     const wf = workflow(name);
     expect(wf.on.workflow_call).toBeDefined();
@@ -75,7 +75,7 @@ it("commitlint uses the standard's tool versions and header rule", () => {
 });
 
 it("release exposes the outputs callers use", () => {
-  expect(Object.keys(workflow("release.yml").on.workflow_call?.outputs ?? {})).toEqual(
+  expect(Object.keys(workflow("release-please.yml").on.workflow_call?.outputs ?? {})).toEqual(
     expect.arrayContaining(["release_created", "tag_name", "version", "major"]),
   );
 });
